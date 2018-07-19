@@ -1,7 +1,7 @@
 bitcoin-segwit-payments
 =================
 
-Library to assist in payment processing on ethereum. It first allows for generation
+Library to assist in payment processing on Bitcoin. It first allows for generation
 of address according to the [BIP44 standard](https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki).
 
 [Bitcoin-js](https://github.com/bitcoinjs/bitcoinjs-lib) is used for  deterministic public and private keys.

@@ -8,7 +8,6 @@ function SegwitDepositUtils (options) {
   return self
 }
 
-// https://github.com/trapp/ethereum-bip44
 SegwitDepositUtils.prototype.bip44 = function (xpub, path, derviation) {
   if (!derviation) {
     derviation = 0
@@ -20,7 +19,6 @@ SegwitDepositUtils.prototype.bip44 = function (xpub, path, derviation) {
   return bitcoin.address.fromOutputScript(scriptPubKey)
 }
 
-// // https://github.com/trapp/ethereum-bip44
 SegwitDepositUtils.prototype.getPrivateKey = function (xprv, path, derviation) {
   if (!derviation) {
     derviation = 0
