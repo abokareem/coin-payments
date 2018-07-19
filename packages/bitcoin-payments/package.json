@@ -1,0 +1,39 @@
+{
+  "name": "bitcoin-segwit-payments",
+  "version": "0.0.1",
+  "description": "lightweight bitcoin payment processing with segwit",
+  "main": "index.js",
+  "directories": {
+    "test": "test"
+  },
+  "scripts": {
+    "test": "mocha test/test.js --timeout 999999999"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/go-faast/bitcoin-segwit-payments.git"
+  },
+  "keywords": [
+    "bitcoin",
+    "segwit",
+    "blockchain",
+    "faast",
+    "bitaccess",
+    "payments"
+  ],
+  "author": "Moe Adham",
+  "license": "MIT",
+  "bugs": {
+    "url": "https://github.com/go-faast/bitcoin-segwit-payments/issues"
+  },
+  "homepage": "https://github.com/go-faast/bitcoin-segwit-payments#readme",
+  "devDependencies": {
+    "async": "^2.6.1",
+    "chai": "^4.1.2",
+    "mocha": "^5.2.0",
+    "standard": "^11.0.1"
+  },
+  "dependencies": {
+    "bitcoinjs-lib": "3.3.2"
+  }
+}
