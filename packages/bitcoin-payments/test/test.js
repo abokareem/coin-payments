@@ -16,8 +16,11 @@ let pubAddress = ''
 // If you do this for real, you deserve what is coming to you.
 let entropy = 'dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd'
 
-let SegwitDepositUtils = require('../index')()
-describe('SegwitDepositUtils', function () {
+let SegwitDepositUtils = require('../index')({
+  insightUrl: 'https://node.bacloud.ninja/insight-api/',
+  network: 'mainnet'
+})
+describe('Mainnet SegwitDepositUtils', function () {
   it('get an xpub from an xprv', function (done) {
     let generateXpub = SegwitDepositUtils.getXpubFromXprv(xprv)
     expect(generateXpub).to.deep.equal(xpub44Btc)
@@ -51,7 +54,8 @@ describe('SegwitDepositUtils', function () {
 
   // This test takes a long time. It really just makes sure we don't have padding
   // issues in a brute force way.
-  if (false) {
+  let regress = false
+  if (regress) {
     it('generate 1000 addresses and private keys, make sure they match', function (done) {
       let keys = SegwitDepositUtils.generateNewKeys(entropy)
       let paths = []
@@ -79,4 +83,63 @@ describe('SegwitDepositUtils', function () {
       })
     })
   }
+  let getUTXOs = false
+  if (getUTXOs) {
+    it('Get UTXOs for a single address', function (done) {
+      SegwitDepositUtils.getUTXOs(xpub44Btc, 1, function (err, utxos) {
+        if (err) console.log(err)
+        expect(utxos).to.deep.equal(utxosExpected)
+        done()
+      })
+    })
+  }
+
+  it('Generate a sweep transaction for a single address', function (done) {
+    let to = '1LHTwHUbAxoKcqpSu3xoFDTso1sDFSio8L'
+    let signedtx = SegwitDepositUtils.getSweepTransaction(xprv, 1, to, utxosExpected)
+    expect(signedtx).to.deep.equal(signedTxExpected)
+    done()
+  })
+  let broadcast = false
+  if (broadcast) {
+    it('Broadcast a sweep transaction for a single address', function (done) {
+      SegwitDepositUtils.broadcastTransaction(signedTxExpected, function (err, txHash) {
+        if (err) console.log(err)
+        expect(txHash).to.deep.equal(txHashExpected)
+        done()
+      })
+    })
+  }
+  it('Sweep transaction for a single address', function (done) {
+    // SegwitDepositUtils.sweepTransaction(xprv, 2, to, function (err, sweptTransaction) {
+    //
+    // })
+    done()
+  })
 })
+
+const utxosExpected = [
+  {
+    'address': '3P7ENQbgWDRSSQYRwRuA1ypJNJ9zc5yRj5',
+    'txid': '4c066ed57895274b92cea0da27929a7191f78c945384521eeced2b1d92990566',
+    'vout': 0,
+    'scriptPubKey': 'a914eaef038db7f441aff99a28ef7e9859f83d15a59887',
+    'amount': 0.0001,
+    'satoshis': 10000
+  },
+  {
+    'address': '3P7ENQbgWDRSSQYRwRuA1ypJNJ9zc5yRj5',
+    'txid': 'f56017b93d715d3eceb2629ed5160bdaee1977b24ec859c65225efbc58dedec3',
+    'vout': 1,
+    'scriptPubKey': 'a914eaef038db7f441aff99a28ef7e9859f83d15a59887',
+    'amount': 0.001,
+    'satoshis': 100000
+  }
+]
+
+const signedTxExpected = { txid: '6335bc9a77c00d9d0d039a5d9f6ea8735bdb5b8d2a200551384acbc7f46aae46',
+  signedTx: '01000000000102660599921d2bedec1e528453948cf791719a9227daa0ce924b279578d56e064c0000000017160014476df58e9a982353abe9d7ff3fdec3f44c3eeae0ffffffffc3dede58bcef2552c659c84eb27719eeda0b16d59e62b2ce3e5d713db91760f50100000017160014476df58e9a982353abe9d7ff3fdec3f44c3eeae0ffffffff0140a50100000000001976a914d38787bf6522bdfad3578cc6ab7af3fa00f57f8088ac02483045022100a4e85569953142bcebee7f933397c356c39d317b05745f99552f41ea0f341cdf0220624adc9abe8231209220a1fb808c3ff6459038aebdeba307b4fe13d3bb7d41f90121039f4a1f1ebc069e7ead5cba7d7a73ed1d7bf0a289e392c4c0ab9e3621da31be8802483045022100a12ce813fecc2470454ab6c6f2fb9875f123df42a141726321188ac6386209e502200c29a2841576dd02571cfc9f5bef9adb8011310cca3248efaba7acc1aa6c766b0121039f4a1f1ebc069e7ead5cba7d7a73ed1d7bf0a289e392c4c0ab9e3621da31be8800000000'}
+const txHashExpected = {
+  broadcasted: true,
+  txid: '6335bc9a77c00d9d0d039a5d9f6ea8735bdb5b8d2a200551384acbc7f46aae46',
+  signedTx: '01000000000102660599921d2bedec1e528453948cf791719a9227daa0ce924b279578d56e064c0000000017160014476df58e9a982353abe9d7ff3fdec3f44c3eeae0ffffffffc3dede58bcef2552c659c84eb27719eeda0b16d59e62b2ce3e5d713db91760f50100000017160014476df58e9a982353abe9d7ff3fdec3f44c3eeae0ffffffff0140a50100000000001976a914d38787bf6522bdfad3578cc6ab7af3fa00f57f8088ac02483045022100a4e85569953142bcebee7f933397c356c39d317b05745f99552f41ea0f341cdf0220624adc9abe8231209220a1fb808c3ff6459038aebdeba307b4fe13d3bb7d41f90121039f4a1f1ebc069e7ead5cba7d7a73ed1d7bf0a289e392c4c0ab9e3621da31be8802483045022100a12ce813fecc2470454ab6c6f2fb9875f123df42a141726321188ac6386209e502200c29a2841576dd02571cfc9f5bef9adb8011310cca3248efaba7acc1aa6c766b0121039f4a1f1ebc069e7ead5cba7d7a73ed1d7bf0a289e392c4c0ab9e3621da31be8800000000'}
