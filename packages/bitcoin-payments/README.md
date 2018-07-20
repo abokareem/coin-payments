@@ -15,7 +15,7 @@ npm install --save bitcoin-segwit-payments
 
 Create a new wallet (DON'T DO THIS ON PRODUCTION):
 ```js
-let segwitPayments = require('@faast/bitcoin-segwit-payments')()
+let segwitPayments = require('bitcoin-segwit-payments')()
 let keys = segwitPayments.generateNewKeys('really random entropy here')
 console.log(keys.xpub)
 console.log(keys.xprv)
