@@ -18,7 +18,7 @@ let pubAddress = ''
 let entropy = 'dddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddddd'
 
 let SegwitDepositUtils = require('../index')({
-  insightUrl: 'https://testnet.bitaccess.ca/insight-api/',
+  insightUrl: 'http://tbtc.faa.st/insight-api/',
   network: 'testnet'
 })
 describe('Testnet SegwitDepositUtils', function () {

@@ -1,4 +1,3 @@
-
 const bitcoin = require('bitcoinjs-lib')
 const request = require('request')
 const MIN_RELAY_FEE = 1000
@@ -18,12 +17,12 @@ function SegwitDepositUtils (options) {
   if (!self.options.network || (self.options.network === 'mainnet')) {
     self.options.network = bitcoin.networks.mainnet
     if (!self.options.backupBroadcastUrl) {
-      self.options.backupBroadcastUrl = 'https://blockexplorer.com/api/'
+      self.options.backupBroadcastUrl = 'https://btc.faa.st/insight-api/'
     }
   } else if (self.options.network === 'testnet') {
     self.options.network = bitcoin.networks.testnet
     if (!self.options.backupBroadcastUrl) {
-      self.options.backupBroadcastUrl = 'https://testnet.bitaccess.ca/insight-api/'
+      self.options.backupBroadcastUrl = 'https://tbtc.faa.st/insight-api/'
     }
   } else {
     return new Error('Invalid network provided ' + self.options.network)
@@ -76,6 +75,18 @@ SegwitDepositUtils.prototype.getXpubFromXprv = function (xprv) {
   return child.neutered().toBase58()
 }
 
+SegwitDepositUtils.prototype.getBalance = function (address, done) {
+  let self = this
+  let url = self.options.insightUrl + 'addr/' + address
+  request.get({json: true, url: url}, function (err, response, body) {
+    if (!err && response.statusCode !== 200) {
+      return done(new Error('Unable to get balance from ' + url))
+    } else {
+      done(null, {balance: body.balance, unconfirmedBalance: body.unconfirmedBalance})
+    }
+  })
+}
+
 SegwitDepositUtils.prototype.getUTXOs = function (xpub, path, done) {
   let self = this
   let address = self.bip44(xpub, path)
@@ -83,6 +94,8 @@ SegwitDepositUtils.prototype.getUTXOs = function (xpub, path, done) {
   let url = self.options.insightUrl + 'addr/' + address + '/utxo'
   request.get({json: true, url: url}, function (err, response, body) {
     if (!err && response.statusCode !== 200) {
+      return done(new Error('Unable to get UTXOs from ' + url))
+    } else if (body.length === 0) {
       return done(new Error('Unable to get UTXOs from ' + url))
     } else {
       let cleanUTXOs = []
