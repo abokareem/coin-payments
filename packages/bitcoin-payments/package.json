@@ -1,17 +1,12 @@
 {
-  "name": "bitcoin-segwit-payments",
+  "name": "@faast/bitcoin-payments",
   "version": "0.0.2",
-  "description": "lightweight bitcoin payment processing with segwit",
+  "description": "Library to assist in processing bitcoin payments, such as deriving addresses and sweeping funds",
   "main": "index.js",
-  "directories": {
-    "test": "test"
-  },
-  "scripts": {
-    "test": "mocha test/*.js --timeout 999999999"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/go-faast/bitcoin-segwit-payments.git"
+  "repository": "https://github.com/go-faast/coin-payments/tree/master/packages/bitcoin-payments",
+  "homepage": "https://github.com/go-faast/coin-payments/tree/master/packages/bitcoin-payments#readme",
+  "bugs": {
+    "url": "https://github.com/go-faast/coin-payments/issues"
   },
   "keywords": [
     "bitcoin",
@@ -21,12 +16,14 @@
     "bitaccess",
     "payments"
   ],
-  "author": "Moe Adham",
+  "contributors": [
+    "Moe Adham <moe@bitaccess.ca>",
+    "Dylan Seago <dylan@bitaccess.ca>"
+  ],
   "license": "MIT",
-  "bugs": {
-    "url": "https://github.com/go-faast/bitcoin-segwit-payments/issues"
+  "scripts": {
+    "test": "mocha test/*.js --timeout 999999999"
   },
-  "homepage": "https://github.com/go-faast/bitcoin-segwit-payments#readme",
   "devDependencies": {
     "async": "^2.6.1",
     "chai": "^4.1.2",
