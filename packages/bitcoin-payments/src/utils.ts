@@ -1,3 +1,5 @@
+import { NetworkType, FeeLevel } from '@faast/payments-common'
+import request from 'request-promise-native'
 
 /**
  * Estimate size of transaction a certain number of inputs and outputs.
@@ -58,4 +60,18 @@ export function estimateTxFee (satPerByte: number, inputsCount: number, outputsC
   const { min, max } = estimateTxSize(inputsCount, outputsCount, handleSegwit)
   const mean = Math.ceil((min + max) / 2)
   return mean * satPerByte
+}
+
+/** Get sat/byte fee estimate from blockcypher */
+export async function getBlockcypherFeeEstimate(feeLevel: FeeLevel, networkType: NetworkType): Promise<number> {
+  const body = await request.get(
+    `https://api.blockcypher.com/v1/btc/${networkType === NetworkType.Mainnet ? 'main' : 'test3'}`,
+    { json: true },
+  )
+  const feePerKbField = `${feeLevel}_fee_per_kb`
+  const feePerKb = body[feePerKbField]
+  if (!feePerKb) {
+    throw new Error(`Blockcypher response is missing expected field ${feePerKbField}`)
+  }
+  return feePerKb / 1000
 }

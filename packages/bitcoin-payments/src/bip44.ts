@@ -1,28 +1,23 @@
-import bitcoin, { networks } from 'bitcoinjs-lib'
+import bitcoin from 'bitcoinjs-lib'
 import { BitcoinjsNetwork } from './types'
-import { NETWORK_MAINNET, DEFAULT_DERIVATION_PATH } from './constants';
+import { NETWORK_MAINNET, DEFAULT_DERIVATION_PATH } from './constants'
+
+export function deriveHdNode(hdKey: string, index: number, network: BitcoinjsNetwork) {
+  const baseNode = bitcoin.HDNode.fromBase58(hdKey, network)
+  return baseNode.derive(0).derive(index)
+}
 
 export function deriveAddress(xpub: string, index: number, network: BitcoinjsNetwork) {
-  const node = bitcoin.HDNode.fromBase58(xpub, network)
-  const nodeDerivation = node.derive(0).derive(index)
+  const node = deriveHdNode(xpub, index, network)
   const redeemScript = bitcoin.script.witnessPubKeyHash.output.encode(
-    bitcoin.crypto.hash160(nodeDerivation.getPublicKeyBuffer()))
+    bitcoin.crypto.hash160(node.getPublicKeyBuffer()))
   const scriptPubKey = bitcoin.script.scriptHash.output.encode(bitcoin.crypto.hash160(redeemScript))
   return bitcoin.address.fromOutputScript(scriptPubKey, network)
 }
 
 export function derivePrivateKey(xprv: string, index: number, network: BitcoinjsNetwork) {
-  const node = bitcoin.HDNode.fromBase58(xprv, network)
-  const nodeDerivation = node.derive(0).derive(index)
-  return nodeDerivation.keyPair.toWIF()
-}
-
-export function privateKeyToAddress(privateKey: string, network: BitcoinjsNetwork) {
-  const keyPair = bitcoin.ECPair.fromWIF(privateKey, network)
-  const redeemScript = bitcoin.script.witnessPubKeyHash.output.encode(
-    bitcoin.crypto.hash160(keyPair.getPublicKeyBuffer()))
-  const scriptPubKey = bitcoin.script.scriptHash.output.encode(bitcoin.crypto.hash160(redeemScript))
-  return bitcoin.address.fromOutputScript(scriptPubKey, network)
+  const node = deriveHdNode(xprv, index, network)
+  return node.keyPair.toWIF()
 }
 
 export function xprvToXpub(xprv: string, network: BitcoinjsNetwork) {
