@@ -64,16 +64,30 @@ export const FeeOptionLevel = t.partial(
 export const FeeOption = t.union([FeeOptionCustom, FeeOptionLevel], 'FeeOption')
 export type FeeOption = t.TypeOf<typeof FeeOption>
 
+export const Utxo = t.type({
+  id: t.string,
+  value: t.string,
+  height: nullable(t.string),
+  data: t.object,
+}, 'Utxo')
+export type Utxo = t.TypeOf<typeof Utxo>
+
 export const CreateTransactionOptions = extendCodec(
   FeeOption,
   {},
   {
     sequenceNumber: Numeric,
     payportBalance: Numeric,
+    inputUtxos: t.array(Utxo),
   },
   'CreateTransactionOptions',
 )
 export type CreateTransactionOptions = t.TypeOf<typeof CreateTransactionOptions>
+
+export const GetPayportOptions = t.partial({
+  cacheIndex: t.boolean,
+})
+export type GetPayportOptions = t.TypeOf<typeof GetPayportOptions>
 
 export const ResolvedFeeOption = t.type({
   targetFeeLevel: FeeLevelT,
