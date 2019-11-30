@@ -1,4 +1,4 @@
-import { BaseBlockbook } from './Blockbook'
+import { BaseBlockbook } from './BaseBlockbook'
 import {
   BlockbookConfig,
   NormalizedTxBitcoin,
@@ -11,6 +11,9 @@ import {
   AddressDetailsBitcoinTxs,
 } from './types'
 
+/**
+ * An implementation of the blockbook wrapper with typings for Bitcoin (and Bitcoin-like coins)
+ */
 export class BlockbookBitcoin extends BaseBlockbook<
   NormalizedTxBitcoin,
   SpecificTxBitcoin,
