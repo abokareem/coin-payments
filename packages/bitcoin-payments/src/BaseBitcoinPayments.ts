@@ -6,7 +6,7 @@ import {
   FeeLevel, FeeOptionCustom, FeeRateType, ResolveablePayport, GetPayportOptions,
 } from '@faast/payments-common'
 import {
-  assertType, isUndefined, isType,
+  assertType, isUndefined, isType, toBigNumber,
 } from '@faast/ts-common'
 
 import { estimateTxFee, getBlockcypherFeeEstimate } from './utils'
@@ -23,164 +23,30 @@ import {
   BitcoinUtxo,
 } from './types'
 import {
-  DEFAULT_SERVER,
   DEFAULT_DERIVATION_PATH,
   DEFAULT_SAT_PER_BYTE_LEVELS,
   MIN_RELAY_FEE,
   DEFAULT_FEE_LEVEL,
 } from './constants'
 
-export abstract class BaseBitcoinPayments<Config extends BaseBitcoinPaymentsConfig> extends BitcoinPaymentsUtils
-  implements BasePayments<
-    Config,
-    BitcoinUnsignedTransaction,
-    BitcoinSignedTransaction,
-    BitcoinBroadcastResult,
-    BitcoinTransactionInfo
-  > {
-  server: string | null
-
-  constructor(config: Config) {
-    super(config)
-
-    if (isUndefined(config.server)) {
-      this.server = DEFAULT_SERVER
-      this.logger.warn(
-        'Using default bitcoin server. It is highly suggested you set one yourself!',
-        this.server,
-      )
+/**
+ * Sort the utxos for input selection
+ */
+function sortUtxos(utxoList: BitcoinUtxo[]): BitcoinUtxo[] {
+  const matureList: BitcoinUtxo[] = []
+  const immatureList: BitcoinUtxo[] = []
+  utxoList.forEach((utxo) => {
+    if (utxo.confirmations && utxo.confirmations >= 6) {
+      matureList.push(utxo)
     } else {
-      this.server = config.server
+      immatureList.push(utxo)
     }
-  }
+  })
+  matureList.sort((a, b) => toBigNumber(a.value).minus(b.value).toNumber()) // Ascending order by value
+  immatureList.sort((a, b) => (b.confirmations || 0) - (a.confirmations || 0)) // Descending order by confirmations
+  return matureList.concat(immatureList)
+}
 
-  abstract getFullConfig(): Config
-  abstract getPublicConfig(): Config
-  abstract getAccountId(index: number): string
-  abstract getAccountIds(): string[]
-  abstract async getPayport(index: number, options?: GetPayportOptions): Promise<Payport>
-  abstract async getPrivateKey(index: number): Promise<string>
-
-  async init() {}
-  async destroy() {}
-
-  requiresBalanceMonitor() {
-    return false
-  }
-
-  async getBalance(address: string): Promise<BalanceResult> {
-    const url = this.server + 'addr/' + address
-    let body
-    try {
-      body = await request.get({
-        url,
-        json: true
-      })
-    } catch (e) {
-      throw new Error(`Unable to get balance from ${url} - ${e.message}`)
-    }
-    const confirmedBalance = new BigNumber(body.balance)
-    const unconfirmedBalance = new BigNumber(body.unconfirmedBalance)
-    return {
-      confirmedBalance: confirmedBalance.toString(),
-      unconfirmedBalance: unconfirmedBalance.toString(),
-      sweepable: confirmedBalance.gt(MIN_RELAY_FEE)
-    }
-  }
-
-  async resolvePayport(payport: ResolveablePayport): Promise<Payport> {
-    if (typeof payport === 'number') {
-      return this.getPayport(payport)
-    } else if (typeof payport === 'string') {
-      if (!this.isValidAddress(payport)) {
-        throw new Error(`Invalid BTC address: ${payport}`)
-      }
-      return { address: payport }
-    }
-    if (!this.isValidPayport(payport)) {
-      throw new Error(`Invalid BTC payport: ${payport.address}/${payport.extraId}`)
-    }
-    return payport
-  }
-
-  usesUtxos() {
-    return true
-  }
-
-  async getAvailableUtxos(payport: ResolveablePayport): Promise<BitcoinUtxo> {
-    const { address } = await this.resolvePayport(payport)
-    let url = this.server + 'addr/' + address + '/utxo'
-    const body = await request.get({ json: true, url: url })
-    if (!Array.isArray(body) || body.length === 0) {
-      throw new Error('Unable to get UTXOs from ' + url)
-    }
-    let cleanUTXOs = body.map((utxo) => {
-      delete utxo['confirmations']
-      delete utxo['height']
-      delete utxo['ts']
-      return utxo
-    })
-    this.logger.log('TESTNET ENABLED: Clipping UTXO length to 2 for test purposes')
-    if (this.bitcoinjsNetwork === bitcoin.networks.testnet) {
-      cleanUTXOs = cleanUTXOs.slice(0, 2)
-    }
-    return cleanUTXOs
-  }
-
-  usesSequenceNumber() {
-    return false
-  }
-
-  async getNextSequenceNumber() {
-    return null
-  }
-
-  async resolveFeeOption(feeOption: FeeOption): Promise<ResolvedFeeOption> {
-    let targetFeeLevel: FeeLevel
-    let targetFeeRateType: FeeRateType
-    let targetFeeRate: string
-    if (isType(FeeOptionCustom, feeOption)) {
-      targetFeeLevel = FeeLevel.Custom
-      targetFeeRateType = feeOption.feeRateType
-      targetFeeRate = feeOption.feeRate
-    } else {
-      targetFeeLevel = feeOption.feeLevel || DEFAULT_FEE_LEVEL
-      targetFeeRateType = FeeRateType.BasePerWeight
-      try {
-        targetFeeRate = (await getBlockcypherFeeEstimate(targetFeeLevel, this.networkType)).toString()
-      } catch (e) {
-        targetFeeRate = DEFAULT_SAT_PER_BYTE_LEVELS[targetFeeLevel].toString()
-        this.logger.warn(
-          `Failed to get bitcoin ${this.networkType} fee estimate, using hardcoded default of ${targetFeeRate} sat/byte -- ${e.message}`
-        )
-      }
-    }
-    return {
-      targetFeeLevel,
-      targetFeeRate,
-      targetFeeRateType,
-      feeBase: '',
-      feeMain: '',
-    }
-  }
-
-  /**
-   * Sort the utxos for input selection
-   */
-  function sortUtxos(utxoList: BitcoinishUtxo[]): BitcoinishUtxo[] {
-    const matureList: BitcoinishUtxo[] = []
-    const immatureList: BitcoinishUtxo[] = []
-    utxoList.forEach((utxo) => {
-      if (utxo.confirmations >= 6) {
-        matureList.push(utxo)
-      } else {
-        immatureList.push(utxo)
-      }
-    })
-    matureList.sort((a, b) => a.satoshis - b.satoshis) // Ascending order by value
-    immatureList.sort((a, b) => b.confirmations - a.confirmations) // Descending order by confirmations
-    return matureList.concat(immatureList)
-  }
 
   /**
    * Build a simple payment transaction.
@@ -204,7 +70,7 @@ export abstract class BaseBitcoinPayments<Config extends BaseBitcoinPaymentsConf
    *   Otherwise it will be included as a fee instead (unit: satoshi)
    * @returns {Object}
    */
-  export function buildPaymentTx(
+  function buildPaymentTx(
     account: AccountInfo,
     desiredOutputs: Array<{ address: string, amount: number}>,
     feeRate: FeeRate | number,
@@ -314,6 +180,125 @@ export abstract class BaseBitcoinPayments<Config extends BaseBitcoinPaymentsConf
       isSegwit,
     }
 
+  }
+
+export abstract class BaseBitcoinPayments<Config extends BaseBitcoinPaymentsConfig> extends BitcoinPaymentsUtils
+  implements BasePayments<
+    Config,
+    BitcoinUnsignedTransaction,
+    BitcoinSignedTransaction,
+    BitcoinBroadcastResult,
+    BitcoinTransactionInfo,
+    BitcoinUtxo,
+  > {
+
+  abstract getFullConfig(): Config
+  abstract getPublicConfig(): Config
+  abstract getAccountId(index: number): string
+  abstract getAccountIds(): string[]
+  abstract async getPayport(index: number, options?: GetPayportOptions): Promise<Payport>
+  abstract async getPrivateKey(index: number): Promise<string>
+
+  async init() {}
+  async destroy() {}
+
+  requiresBalanceMonitor() {
+    return false
+  }
+
+  async getBalance(address: string): Promise<BalanceResult> {
+    const url = this.server + 'addr/' + address
+    let body
+    try {
+      body = await request.get({
+        url,
+        json: true
+      })
+    } catch (e) {
+      throw new Error(`Unable to get balance from ${url} - ${e.message}`)
+    }
+    const confirmedBalance = new BigNumber(body.balance)
+    const unconfirmedBalance = new BigNumber(body.unconfirmedBalance)
+    return {
+      confirmedBalance: confirmedBalance.toString(),
+      unconfirmedBalance: unconfirmedBalance.toString(),
+      sweepable: confirmedBalance.gt(MIN_RELAY_FEE)
+    }
+  }
+
+  async resolvePayport(payport: ResolveablePayport): Promise<Payport> {
+    if (typeof payport === 'number') {
+      return this.getPayport(payport)
+    } else if (typeof payport === 'string') {
+      if (!this.isValidAddress(payport)) {
+        throw new Error(`Invalid BTC address: ${payport}`)
+      }
+      return { address: payport }
+    }
+    if (!this.isValidPayport(payport)) {
+      throw new Error(`Invalid BTC payport: ${payport.address}/${payport.extraId}`)
+    }
+    return payport
+  }
+
+  usesUtxos() {
+    return true
+  }
+
+  async getAvailableUtxos(payport: ResolveablePayport): Promise<BitcoinUtxo[]> {
+    const { address } = await this.resolvePayport(payport)
+    let utxosRaw = await this.getApi().getUtxosForAddress(address)
+    if (this.networkType === NetworkType.Testnet) {
+      this.logger.log('TESTNET ENABLED: Clipping UTXO length to 2 for test purposes')
+      utxosRaw = utxosRaw.slice(0, 2)
+    }
+    const utxos: BitcoinUtxo[] = utxosRaw.map((data) => {
+      const { value, height, lockTime } = data
+      return {
+        ...data,
+        value: this.toMainDenomination(value),
+        height: isUndefined(height) ? undefined : String(height),
+        lockTime: isUndefined(lockTime) ? undefined : String(lockTime),
+      }
+    })
+    return utxos
+  }
+
+  usesSequenceNumber() {
+    return false
+  }
+
+  async getNextSequenceNumber() {
+    return null
+  }
+
+  async resolveFeeOption(feeOption: FeeOption): Promise<ResolvedFeeOption> {
+    let targetFeeLevel: FeeLevel
+    let targetFeeRateType: FeeRateType
+    let targetFeeRate: string
+    if (isType(FeeOptionCustom, feeOption)) {
+      targetFeeLevel = FeeLevel.Custom
+      targetFeeRateType = feeOption.feeRateType
+      targetFeeRate = feeOption.feeRate
+    } else {
+      targetFeeLevel = feeOption.feeLevel || DEFAULT_FEE_LEVEL
+      targetFeeRateType = FeeRateType.BasePerWeight
+      try {
+        targetFeeRate = (await getBlockcypherFeeEstimate(targetFeeLevel, this.networkType)).toString()
+      } catch (e) {
+        targetFeeRate = DEFAULT_SAT_PER_BYTE_LEVELS[targetFeeLevel].toString()
+        this.logger.warn(
+          `Failed to get bitcoin ${this.networkType} fee estimate, using hardcoded default of ${targetFeeRate} sat/byte -- ${e.message}`
+        )
+      }
+    }
+    return {
+      targetFeeLevel,
+      targetFeeRate,
+      targetFeeRateType,
+      feeBase: '',
+      feeMain: '',
+    }
   }
 
 

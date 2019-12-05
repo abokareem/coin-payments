@@ -13,20 +13,9 @@ import {
 import { Logger, DelegateLogger, isNil, assertType } from '@faast/ts-common'
 import { PACKAGE_NAME } from './constants'
 import { BaseBitcoinPaymentsConfig } from './types'
+import { BlockbookConnected } from './BlockbookConnected'
 
-export class BitcoinPaymentsUtils implements PaymentsUtils {
-  networkType: NetworkType
-  bitcoinjsNetwork: BitcoinjsNetwork
-  logger: Logger
-
-  constructor(config: BaseBitcoinPaymentsConfig = {}) {
-    assertType(BaseBitcoinPaymentsConfig, config)
-    this.networkType = config.network || NetworkType.Mainnet
-    this.logger = new DelegateLogger(config.logger, PACKAGE_NAME)
-    this.bitcoinjsNetwork = this.networkType === NetworkType.Mainnet
-      ? networks.bitcoin
-      : networks.testnet
-  }
+export class BitcoinPaymentsUtils extends BlockbookConnected implements PaymentsUtils  {
 
   async isValidExtraId(extraId: string): Promise<boolean> {
     return isValidExtraId(extraId)

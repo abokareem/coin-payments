@@ -11,7 +11,7 @@ import {
 } from '@faast/ts-common'
 import { estimateTxFee, getBlockcypherFeeEstimate } from './utils'
 import { BitcoinPaymentsUtils } from './BitcoinPaymentsUtils'
-import { xprvToXpub, deriveAddress, deriveHdNode, derivePrivateKey } from './bip44';
+import { xprvToXpub, deriveAddress, deriveHdNode, derivePrivateKey } from './bip44'
 import {
   HdBitcoinPaymentsConfig,
   BitcoinTransactionInfo,
@@ -27,7 +27,6 @@ import {
   DEFAULT_SAT_PER_BYTE_LEVELS,
   MIN_RELAY_FEE,
   DEFAULT_FEE_LEVEL,
-  BASE_PER_MAIN,
 } from './constants'
 import { BaseBitcoinPayments } from './BaseBitcoinPayments'
 import { toBaseDenominationNumber, toMainDenominationNumber } from './helpers'

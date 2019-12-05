@@ -64,13 +64,21 @@ export const FeeOptionLevel = t.partial(
 export const FeeOption = t.union([FeeOptionCustom, FeeOptionLevel], 'FeeOption')
 export type FeeOption = t.TypeOf<typeof FeeOption>
 
-export const Utxo = t.type({
-  id: t.string,
-  value: t.string,
-  height: nullable(t.string),
-  data: t.object,
-}, 'Utxo')
-export type Utxo = t.TypeOf<typeof Utxo>
+export const BaseUtxo = requiredOptionalCodec(
+  {
+    txid: t.string,
+    vout: t.number,
+    value: t.string, // main denomination
+  },
+  {
+    confirmations: t.number,
+    height: t.string,
+    lockTime: t.string,
+    coinbase: t.boolean,
+  },
+  'BaseUtxo',
+)
+export type BaseUtxo = t.TypeOf<typeof BaseUtxo>
 
 export const CreateTransactionOptions = extendCodec(
   FeeOption,
@@ -78,7 +86,7 @@ export const CreateTransactionOptions = extendCodec(
   {
     sequenceNumber: Numeric,
     payportBalance: Numeric,
-    inputUtxos: t.array(Utxo),
+    inputUtxos: t.array(BaseUtxo),
   },
   'CreateTransactionOptions',
 )

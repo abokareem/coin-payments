@@ -11,7 +11,7 @@ import {
   Payport,
   FromTo,
   ResolveablePayport,
-  Utxo,
+  BaseUtxo,
 } from './types'
 import { PaymentsUtils } from './PaymentsUtils'
 
@@ -31,7 +31,8 @@ export interface BasePayments<
   UnsignedTransaction extends BaseUnsignedTransaction,
   SignedTransaction extends BaseSignedTransaction,
   BroadcastResult extends BaseBroadcastResult,
-  TransactionInfo extends BaseTransactionInfo
+  TransactionInfo extends BaseTransactionInfo,
+  Utxo extends BaseUtxo = BaseUtxo,
 > extends PaymentsUtils {
   /** Establishes any connections necessary for use */
   init(): Promise<void>
@@ -109,7 +110,7 @@ export interface BasePayments<
 
   usesUtxos(): boolean
 
-  getAvailableUtxos(): Promise<Utxo[]>
+  getAvailableUtxos(payport: ResolveablePayport): Promise<Utxo[]>
 
   usesSequenceNumber(): boolean
 

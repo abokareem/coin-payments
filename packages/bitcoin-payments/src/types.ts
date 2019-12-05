@@ -1,19 +1,28 @@
 import * as t from 'io-ts'
 import {
   BaseConfig, BaseUnsignedTransaction, BaseSignedTransaction,
-  BaseTransactionInfo, BaseBroadcastResult, Utxo,
+  BaseTransactionInfo, BaseBroadcastResult, BaseUtxo,
 } from '@faast/payments-common'
-import { extendCodec, nullable } from '@faast/ts-common'
+import { extendCodec, nullable, instanceofCodec } from '@faast/ts-common';
 import { Network as BitcoinjsNetwork } from 'bitcoinjs-lib'
+import { BlockbookBitcoin, BlockInfoBitcoin, UtxoDetails } from 'blockbook-client'
 
 export { BitcoinjsNetwork }
 
-export const BaseBitcoinPaymentsConfig = extendCodec(
+export const BlockbookConnectedConfig = extendCodec(
   BaseConfig,
   {},
   {
-    server: nullable(t.string),
+    server: t.union([t.string, instanceofCodec(BlockbookBitcoin), t.null]),
   },
+  'BlockbookConnectedConfig',
+)
+export type BlockbookConnectedConfig = t.TypeOf<typeof BlockbookConnectedConfig>
+
+export const BaseBitcoinPaymentsConfig = extendCodec(
+  BlockbookConnectedConfig,
+  {},
+  {},
   'BaseBitcoinPaymentsConfig',
 )
 export type BaseBitcoinPaymentsConfig = t.TypeOf<typeof BaseBitcoinPaymentsConfig>
@@ -50,14 +59,11 @@ export const BitcoinBroadcastResult = extendCodec(BaseBroadcastResult, {}, {}, '
 export type BitcoinBroadcastResult = t.TypeOf<typeof BitcoinBroadcastResult>
 
 export const BitcoinUtxo = extendCodec(
-  Utxo,
-  {
-    satoshis: t.number,
-    blockNumber: nullable(t.number),
-    confirmations: t.number,
-    txid: t.string,
-    vout: t.number,
-  },
+  BaseUtxo,
+  {},
   'BitcoinUtxo',
 )
 export type BitcoinUtxo = t.TypeOf<typeof BitcoinUtxo>
+
+export const BitcoinBlock = BlockInfoBitcoin
+export type BitcoinBlock = BlockInfoBitcoin

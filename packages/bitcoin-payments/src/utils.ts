@@ -1,5 +1,63 @@
 import { NetworkType, FeeLevel } from '@faast/payments-common'
 import request from 'request-promise-native'
+import { BlockbookConnectedConfig } from './types'
+import { BlockbookBitcoin, Blockbook } from 'blockbook-client'
+import { isString, Logger, isMatchingError } from '@faast/ts-common'
+import { DEFAULT_MAINNET_SERVER, DEFAULT_TESTNET_SERVER } from './constants'
+import promiseRetry from 'promise-retry'
+
+export function resolveServer(server: BlockbookConnectedConfig['server'], network: NetworkType): {
+  api: BlockbookBitcoin
+  server: string | null
+} {
+  if (typeof server === 'undefined' || server === null) {
+    server = network === NetworkType.Testnet ? DEFAULT_TESTNET_SERVER : DEFAULT_MAINNET_SERVER
+  }
+  if (isString(server)) {
+    return {
+      api: new BlockbookBitcoin({
+        nodes: [server],
+      }),
+      server,
+    }
+  } else if (server instanceof BlockbookBitcoin) {
+    return {
+      api: server,
+      server: server.nodes[0] || '',
+    }
+  } else {
+    // null server arg -> offline mode
+    return {
+      api: new BlockbookBitcoin({
+        nodes: [''],
+      }),
+      server: null,
+    }
+  }
+}
+
+const RETRYABLE_ERRORS = ['timeout', 'disconnected']
+const MAX_RETRIES = 3
+
+export function retryIfDisconnected<T>(fn: () => Promise<T>, api: BlockbookBitcoin, logger: Logger): Promise<T> {
+  return promiseRetry(
+    (retry, attempt) => {
+      return fn().catch(async e => {
+        if (isMatchingError(e, RETRYABLE_ERRORS)) {
+          logger.log(
+            `Retryable error during blockbook server call, retrying ${MAX_RETRIES - attempt} more times`,
+            e.toString(),
+          )
+          retry(e)
+        }
+        throw e
+      })
+    },
+    {
+      retries: MAX_RETRIES,
+    },
+  )
+}
 
 /**
  * Estimate size of transaction a certain number of inputs and outputs.
