@@ -1,7 +1,7 @@
 import { BaseTronPayments } from './BaseTronPayments'
 import { HdTronPaymentsConfig } from './types'
 import { deriveAddress, derivePrivateKey, xprvToXpub, generateNewKeys } from './bip44'
-import { Payport } from '@faast/payments-common'
+import { Payport, GetPayportOptions } from '@faast/payments-common'
 import { isValidXprv, isValidXpub, isValidAddress } from './helpers'
 import { omit } from 'lodash'
 
