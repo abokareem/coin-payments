@@ -72,6 +72,7 @@
     "@faast/payments-common": "^0.17.6",
     "@faast/ts-common": "^0.6.0",
     "bitcoinjs-lib": "3.3.2",
+    "blockbook-client": "^0.3.1",
     "io-ts": "^1.10.4",
     "lodash": "^4.17.15",
     "qs": "^6.9.1",
