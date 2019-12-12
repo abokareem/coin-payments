@@ -35,6 +35,10 @@ export abstract class BaseBitcoinPayments<Config extends BaseBitcoinPaymentsConf
 
   abstract getKeyPair(index: number): bitcoin.ECPair
 
+  async isValidAddress(address: string): Promise<boolean> {
+    return isValidAddress(address, this.bitcoinjsNetwork)
+  }
+
   async getFeeRateRecommendation(feeLevel: FeeLevel.High | FeeLevel.Medium | FeeLevel.Low): Promise<FeeRate> {
     let satPerByte: number
     try {

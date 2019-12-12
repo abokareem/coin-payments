@@ -8,9 +8,9 @@ import {
 import {
   assertType,
 } from '@faast/ts-common'
-import { xprvToXpub, deriveAddress, deriveHdNode, derivePrivateKey } from './bip44'
+import { xprvToXpub, deriveAddress, deriveHdNode, derivePrivateKey, deriveKeyPair } from './bip44'
 import {
-  HdBitcoinPaymentsConfig,
+  HdBitcoinPaymentsConfig, HdBitcoinishPaymentsConfig,
 } from './types'
 import {
   DEFAULT_DERIVATION_PATH,
@@ -20,12 +20,12 @@ import {
 } from './constants'
 import { BaseBitcoinPayments } from './BaseBitcoinPayments'
 
-export class HdBitcoinPayments extends BaseBitcoinPayments<HdBitcoinPaymentsConfig> {
+export class HdBitcoinPayments extends BaseBitcoinPayments<HdBitcoinishPaymentsConfig> {
   readonly derivationPath: string
   readonly xpub: string
   readonly xprv: string | null
 
-  constructor(public config: HdBitcoinPaymentsConfig) {
+  constructor(public config: HdBitcoinishPaymentsConfig) {
     super(config)
     assertType(HdBitcoinPaymentsConfig, config)
     this.derivationPath = config.derivationPath || DEFAULT_DERIVATION_PATH
@@ -58,10 +58,20 @@ export class HdBitcoinPayments extends BaseBitcoinPayments<HdBitcoinPaymentsConf
     return [this.xpub]
   }
 
-  async getPrivateKey(index: number): Promise<string> {
+  getAddress(index: number): string {
+    return deriveAddress(this.xpub, index, this.bitcoinjsNetwork)
+  }
+
+  async getAddressIndex(address: string): Promise<number | null> {
+    const { tokens } = await this._retryDced(() => this.getApi().getXpubDetails(this.xpub, { details: 'tokens' }))
+    // TODO: Search through tokens for address, consider using address cache from tron-payments
+    return null
+  }
+
+  getKeyPair(index: number) {
     if (!this.xprv) {
       throw new Error(`Cannot get private key ${index} - HdBitcoinPayments was created with an xpub`)
     }
-    return derivePrivateKey(this.xprv, index, this.bitcoinjsNetwork)
+    return deriveKeyPair(this.xprv, index, this.bitcoinjsNetwork)
   }
 }

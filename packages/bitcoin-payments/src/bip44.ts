@@ -15,6 +15,11 @@ export function deriveAddress(xpub: string, index: number, network: BitcoinjsNet
   return bitcoin.address.fromOutputScript(scriptPubKey, network)
 }
 
+export function deriveKeyPair(xprv: string, index: number, network: BitcoinjsNetwork) {
+  const node = deriveHdNode(xprv, index, network)
+  return node.keyPair
+}
+
 export function derivePrivateKey(xprv: string, index: number, network: BitcoinjsNetwork) {
   const node = deriveHdNode(xprv, index, network)
   return node.keyPair.toWIF()
