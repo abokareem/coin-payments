@@ -1,15 +1,13 @@
 import { NetworkType } from '@faast/payments-common'
-import { Logger, assertType, DelegateLogger, isUndefined } from '@faast/ts-common'
+import { Logger, assertType, DelegateLogger } from '@faast/ts-common'
 import { BlockbookBitcoin } from 'blockbook-client'
-import { networks } from 'bitcoinjs-lib'
 
-import { BlockbookConnectedConfig, BitcoinBlock, BitcoinjsNetwork } from './types'
+import { BlockbookConnectedConfig } from './types'
 import { DEFAULT_NETWORK, PACKAGE_NAME } from './constants'
 import { resolveServer, retryIfDisconnected } from './utils'
 
 export abstract class BlockbookConnected {
   networkType: NetworkType
-  bitcoinjsNetwork: BitcoinjsNetwork
   logger: Logger
   api: BlockbookBitcoin | null
   server: string | null
@@ -17,9 +15,6 @@ export abstract class BlockbookConnected {
   constructor(config: BlockbookConnectedConfig = {}) {
     assertType(BlockbookConnectedConfig, config)
     this.networkType = config.network || DEFAULT_NETWORK
-    this.bitcoinjsNetwork = this.networkType === NetworkType.Mainnet
-      ? networks.bitcoin
-      : networks.testnet
     this.logger = new DelegateLogger(config.logger, PACKAGE_NAME)
     const { api, server } = resolveServer(config.server, this.networkType)
     this.api = api
@@ -39,12 +34,5 @@ export abstract class BlockbookConnected {
 
   async _retryDced<T>(fn: () => Promise<T>): Promise<T> {
     return retryIfDisconnected(fn, this.getApi(), this.logger)
-  }
-
-  async getBlock(id?: string | number): Promise<BitcoinBlock> {
-    if (isUndefined(id)) {
-      id = (await this.getApi().getStatus()).backend.bestBlockHash
-    }
-    return this.getApi().getBlock(id)
   }
 }

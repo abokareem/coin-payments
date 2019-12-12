@@ -1,8 +1,8 @@
-import { NetworkType, FeeLevel } from '@faast/payments-common'
+import { NetworkType, FeeLevel, UtxoInfo } from '@faast/payments-common'
 import request from 'request-promise-native'
 import { BlockbookConnectedConfig } from './types'
 import { BlockbookBitcoin, Blockbook } from 'blockbook-client'
-import { isString, Logger, isMatchingError } from '@faast/ts-common'
+import { isString, Logger, isMatchingError, toBigNumber } from '@faast/ts-common'
 import { DEFAULT_MAINNET_SERVER, DEFAULT_TESTNET_SERVER } from './constants'
 import promiseRetry from 'promise-retry'
 
@@ -132,4 +132,22 @@ export async function getBlockcypherFeeEstimate(feeLevel: FeeLevel, networkType:
     throw new Error(`Blockcypher response is missing expected field ${feePerKbField}`)
   }
   return feePerKb / 1000
+}
+
+/**
+ * Sort the utxos for input selection
+ */
+export function sortUtxos(utxoList: UtxoInfo[]): UtxoInfo[] {
+  const matureList: UtxoInfo[] = []
+  const immatureList: UtxoInfo[] = []
+  utxoList.forEach((utxo) => {
+    if (utxo.confirmations && utxo.confirmations >= 6) {
+      matureList.push(utxo)
+    } else {
+      immatureList.push(utxo)
+    }
+  })
+  matureList.sort((a, b) => toBigNumber(a.value).minus(b.value).toNumber()) // Ascending order by value
+  immatureList.sort((a, b) => (b.confirmations || 0) - (a.confirmations || 0)) // Descending order by confirmations
+  return matureList.concat(immatureList)
 }

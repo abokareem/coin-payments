@@ -1,4 +1,4 @@
-import { PaymentsUtils, NetworkType, Payport } from '@faast/payments-common'
+import { PaymentsUtils, NetworkType, Payport, createUnitConverters } from '@faast/payments-common'
 import { networks, Network as BitcoinjsNetwork } from 'bitcoinjs-lib'
 import {
   toMainDenominationString,
@@ -10,12 +10,23 @@ import {
   isValidPrivateKey,
   privateKeyToAddress,
 } from './helpers'
-import { Logger, DelegateLogger, isNil, assertType } from '@faast/ts-common'
+import { Logger, DelegateLogger, isNil, assertType, Numeric, isUndefined } from '@faast/ts-common'
 import { PACKAGE_NAME } from './constants'
-import { BaseBitcoinPaymentsConfig } from './types'
 import { BlockbookConnected } from './BlockbookConnected'
+import { BitcoinishBlock, BitcoinishPaymentsUtilsConfig } from './types'
 
-export class BitcoinPaymentsUtils extends BlockbookConnected implements PaymentsUtils  {
+export class BitcoinishPaymentsUtils extends BlockbookConnected implements PaymentsUtils {
+
+  decimals: number
+  bitcoinjsNetwork: BitcoinjsNetwork
+  unitConverters: ReturnType<typeof createUnitConverters>
+
+  constructor(config: BitcoinishPaymentsUtilsConfig) {
+    super(config)
+    this.decimals = config.decimals
+    this.bitcoinjsNetwork = config.bitcoinjsNetwork
+    this.unitConverters = createUnitConverters(this.decimals)
+  }
 
   async isValidExtraId(extraId: string): Promise<boolean> {
     return isValidExtraId(extraId)
@@ -56,13 +67,21 @@ export class BitcoinPaymentsUtils extends BlockbookConnected implements Payments
     return Payport.is(payport) && !(await this._getPayportValidationMessage(payport))
   }
 
-  toMainDenomination(amount: string | number): string {
-    return toMainDenominationString(amount)
+  toMainDenomination(amount: Numeric): string {
+    return this.toMainDenominationString(amount)
   }
 
-  toBaseDenomination(amount: string | number): string {
-    return toBaseDenominationString(amount)
+  toBaseDenomination(amount: Numeric): string {
+    return this.toBaseDenominationString(amount)
   }
+
+  toMainDenominationString = this.unitConverters.toMainDenominationString
+  toMainDenominationNumber = this.unitConverters.toMainDenominationNumber
+  toMainDenominationBigNumber = this.unitConverters.toMainDenominationBigNumber
+
+  toBaseDenominationString = this.unitConverters.toMainDenominationString
+  toBaseDenominationNumber = this.unitConverters.toMainDenominationNumber
+  toBaseDenominationBigNumber = this.unitConverters.toMainDenominationBigNumber
 
   isValidXprv = isValidXprv
   isValidXpub = isValidXpub
@@ -73,5 +92,12 @@ export class BitcoinPaymentsUtils extends BlockbookConnected implements Payments
 
   privateKeyToAddress(privateKey: string) {
     return privateKeyToAddress(privateKey, this.bitcoinjsNetwork)
+  }
+
+  async getBlock(id?: string | number): Promise<BitcoinishBlock> {
+    if (isUndefined(id)) {
+      id = (await this.getApi().getStatus()).backend.bestBlockHash
+    }
+    return this.getApi().getBlock(id)
   }
 }
