@@ -3,7 +3,7 @@ import {
   BaseConfig, BaseUnsignedTransaction, BaseSignedTransaction, FeeRate,
   BaseTransactionInfo, BaseBroadcastResult, UtxoInfo,
 } from '@faast/payments-common'
-import { extendCodec, nullable, instanceofCodec } from '@faast/ts-common'
+import { extendCodec, nullable, instanceofCodec, enumCodec } from '@faast/ts-common'
 import { Network as BitcoinjsNetwork } from 'bitcoinjs-lib'
 import { BlockbookBitcoin, BlockInfoBitcoin } from 'blockbook-client'
 
@@ -19,18 +19,12 @@ export const BlockbookConnectedConfig = extendCodec(
 )
 export type BlockbookConnectedConfig = t.TypeOf<typeof BlockbookConnectedConfig>
 
-export type AddressEncoding = 'P2PKH' | 'P2SH-P2WPKH' | 'P2WPKH' | 'P2SH-P2WSH' | 'P2WSH'
-
-export type PaymentType = {
-  addressEncoding: AddressEncoding,
-  bip44Path: string[] | string | null,
-  bip32: {
-    public: number,
-    publicPrefix: string,
-    private: number,
-    privatePrefix: string,
-  },
+export enum AddressType {
+  Legacy = 'legacy',
+  SegwitP2SH = 'segwit-p2sh',
+  SegwitNative = 'segwit-native',
 }
+export const AddressTypeT = enumCodec<AddressType>(AddressType, 'AddressType')
 
 export type BitcoinishPaymentsUtilsConfig = BlockbookConnectedConfig & {
   coinSymbol: string,
@@ -40,11 +34,10 @@ export type BitcoinishPaymentsUtilsConfig = BlockbookConnectedConfig & {
 }
 
 export type BitcoinishPaymentsConfig = BitcoinishPaymentsUtilsConfig & {
-  paymentTypes: PaymentType[],
+  addressType: AddressType,
   minTxFee: FeeRate,
   dustThreshold: number,
   networkMinRelayFee: number,
-  segwit: boolean,
 }
 
 export const BitcoinishTxOutput = t.type({
@@ -66,7 +59,7 @@ export const BaseBitcoinPaymentsConfig = extendCodec(
   BlockbookConnectedConfig,
   {},
   {
-    segwit: t.boolean,
+    addressType: AddressTypeT,
     minTxFee: FeeRate,
     dustThreshold: t.number,
     networkMinRelayFee: t.number,

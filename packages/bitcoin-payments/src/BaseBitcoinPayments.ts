@@ -1,26 +1,17 @@
 import bitcoin from 'bitcoinjs-lib'
-import request from 'request-promise-native'
-import BigNumber from 'bignumber.js'
 import {
-  BasePayments, NetworkType, BalanceResult, Payport, FeeOption, ResolvedFeeOption,
-  FeeLevel, FeeOptionCustom, FeeRateType, ResolveablePayport, GetPayportOptions,
-  CreateTransactionOptions, FromTo, FeeRate, TransactionStatus,
+  NetworkType, FeeRateType, FeeRate, TransactionStatus, AutoFeeLevels
 } from '@faast/payments-common'
-import { assertType, isUndefined, isType, toBigNumber, Numeric, isNumber } from '@faast/ts-common'
 
-import { estimateTxFee, getBlockcypherFeeEstimate } from './utils'
-import { xprvToXpub, deriveAddress, deriveHdNode } from './bip44'
+import { getBlockcypherFeeEstimate } from './utils'
 import {
   BaseBitcoinPaymentsConfig, BitcoinishUnsignedTransaction, BitcoinishPaymentTx, BitcoinishSignedTransaction,
 } from './types'
 import {
-  DEFAULT_DERIVATION_PATH,
   DEFAULT_SAT_PER_BYTE_LEVELS,
-  MIN_RELAY_FEE,
-  DEFAULT_FEE_LEVEL,
   BITCOIN_CONFIG,
 } from './constants'
-import { toBaseDenominationNumber, toMainDenominationNumber, isValidAddress } from './helpers'
+import { toBaseDenominationNumber, isValidAddress } from './helpers'
 import { BitcoinishPayments } from './BitcoinishPayments'
 
 export abstract class BaseBitcoinPayments<Config extends BaseBitcoinPaymentsConfig> extends BitcoinishPayments<Config> {
@@ -39,7 +30,7 @@ export abstract class BaseBitcoinPayments<Config extends BaseBitcoinPaymentsConf
     return isValidAddress(address, this.bitcoinjsNetwork)
   }
 
-  async getFeeRateRecommendation(feeLevel: FeeLevel.High | FeeLevel.Medium | FeeLevel.Low): Promise<FeeRate> {
+  async getFeeRateRecommendation(feeLevel: AutoFeeLevels): Promise<FeeRate> {
     let satPerByte: number
     try {
       satPerByte = await getBlockcypherFeeEstimate(feeLevel, this.networkType)

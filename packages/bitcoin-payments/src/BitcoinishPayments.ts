@@ -1,21 +1,21 @@
 import {
-  BasePayments, UtxoInfo, FeeOptionCustom, FeeRateType, FeeRate, FeeOption, BaseConfig,
-  ResolvedFeeOption, FeeLevel, AutoFeeLevels, GetPayportOptions, Payport, ResolveablePayport,
+  BasePayments, UtxoInfo, FeeOptionCustom, FeeRateType, FeeRate, FeeOption,
+  ResolvedFeeOption, FeeLevel, AutoFeeLevels, Payport, ResolveablePayport,
   BalanceResult, NetworkType, FromTo, TransactionStatus, CreateTransactionOptions,
 } from '@faast/payments-common'
-import { isUndefined, isType, Numeric, toBigNumber } from '@faast/ts-common';
-import bitcoin from 'bitcoinjs-lib'
+import { isUndefined, isType, Numeric, toBigNumber } from '@faast/ts-common'
 import BigNumber from 'bignumber.js'
+import { get } from 'lodash'
 
 import {
   BitcoinishUnsignedTransaction, BitcoinishSignedTransaction, BitcoinishBroadcastResult, BitcoinishTransactionInfo,
-  BitcoinjsNetwork, BitcoinishPaymentsConfig, BitcoinishBlock, PaymentType, BlockbookConnectedConfig,
+  BitcoinishPaymentsConfig, BlockbookConnectedConfig,
   BitcoinishPaymentTx,
+  AddressType,
 } from './types'
 import { sortUtxos, estimateTxFee } from './utils'
 import { DEFAULT_FEE_LEVEL, MIN_RELAY_FEE } from './constants'
 import { BitcoinishPaymentsUtils } from './BitcoinishPaymentsUtils'
-import { get } from 'lodash';
 
 export abstract class BitcoinishPayments<Config extends BlockbookConnectedConfig> extends BitcoinishPaymentsUtils
   implements BasePayments<
@@ -27,11 +27,10 @@ export abstract class BitcoinishPayments<Config extends BlockbookConnectedConfig
   > {
   coinSymbol: string
   coinName: string
-  paymentTypes: PaymentType[]
+  addressType: AddressType
   minTxFee?: FeeRate
   dustThreshold: number
   networkMinRelayFee: number
-  isSegwit: boolean
 
   constructor(config: BitcoinishPaymentsConfig) {
     super(config)
@@ -39,11 +38,10 @@ export abstract class BitcoinishPayments<Config extends BlockbookConnectedConfig
     this.coinName = config.coinName
     this.decimals = config.decimals
     this.bitcoinjsNetwork = config.bitcoinjsNetwork
-    this.paymentTypes = config.paymentTypes
+    this.addressType = config.addressType
     this.minTxFee = config.minTxFee
     this.dustThreshold = config.dustThreshold
     this.networkMinRelayFee = config.networkMinRelayFee
-    this.isSegwit = config.segwit
   }
 
   abstract getFullConfig(): Config
@@ -57,6 +55,10 @@ export abstract class BitcoinishPayments<Config extends BlockbookConnectedConfig
 
   async init() {}
   async destroy() {}
+
+  get isSegwit() {
+    return this.addressType === 'segwit-p2sh' || this.addressType === 'segwit-native'
+  }
 
   requiresBalanceMonitor() {
     return false

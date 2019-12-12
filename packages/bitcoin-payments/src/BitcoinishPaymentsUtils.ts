@@ -1,8 +1,6 @@
-import { PaymentsUtils, NetworkType, Payport, createUnitConverters } from '@faast/payments-common'
-import { networks, Network as BitcoinjsNetwork } from 'bitcoinjs-lib'
+import { PaymentsUtils, Payport, createUnitConverters } from '@faast/payments-common'
+import { Network as BitcoinjsNetwork } from 'bitcoinjs-lib'
 import {
-  toMainDenominationString,
-  toBaseDenominationString,
   isValidXprv,
   isValidXpub,
   isValidAddress,
@@ -10,8 +8,7 @@ import {
   isValidPrivateKey,
   privateKeyToAddress,
 } from './helpers'
-import { Logger, DelegateLogger, isNil, assertType, Numeric, isUndefined } from '@faast/ts-common'
-import { PACKAGE_NAME } from './constants'
+import { isNil, assertType, Numeric, isUndefined } from '@faast/ts-common'
 import { BlockbookConnected } from './BlockbookConnected'
 import { BitcoinishBlock, BitcoinishPaymentsUtilsConfig } from './types'
 
