@@ -106,16 +106,13 @@ export const CreateTransactionOptions = extendCodec(
 )
 export type CreateTransactionOptions = t.TypeOf<typeof CreateTransactionOptions>
 
-export const GetPayportOptions = t.partial({
-  cacheIndex: t.boolean,
-})
+export const GetPayportOptions = t.partial({}, 'GetPayportOptions')
 export type GetPayportOptions = t.TypeOf<typeof GetPayportOptions>
 
-export const ResolvedFeeOption = requiredOptionalCodec({
+export const ResolvedFeeOption = t.type({
   targetFeeLevel: FeeLevelT,
   targetFeeRate: t.string,
   targetFeeRateType: FeeRateTypeT,
-}, {
   feeBase: t.string,
   feeMain: t.string,
 }, 'ResolvedFeeOption')

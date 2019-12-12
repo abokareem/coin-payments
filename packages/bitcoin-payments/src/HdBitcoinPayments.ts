@@ -62,12 +62,6 @@ export class HdBitcoinPayments extends BaseBitcoinPayments<HdBitcoinishPaymentsC
     return deriveAddress(this.xpub, index, this.bitcoinjsNetwork)
   }
 
-  async getAddressIndex(address: string): Promise<number | null> {
-    const { tokens } = await this._retryDced(() => this.getApi().getXpubDetails(this.xpub, { details: 'tokens' }))
-    // TODO: Search through tokens for address, consider using address cache from tron-payments
-    return null
-  }
-
   getKeyPair(index: number) {
     if (!this.xprv) {
       throw new Error(`Cannot get private key ${index} - HdBitcoinPayments was created with an xpub`)

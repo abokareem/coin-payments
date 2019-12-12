@@ -23,8 +23,7 @@ export abstract class BitcoinishPayments<Config extends BlockbookConnectedConfig
     BitcoinishUnsignedTransaction,
     BitcoinishSignedTransaction,
     BitcoinishBroadcastResult,
-    BitcoinishTransactionInfo,
-    UtxoInfo
+    BitcoinishTransactionInfo
   > {
   coinSymbol: string
   coinName: string
@@ -52,7 +51,6 @@ export abstract class BitcoinishPayments<Config extends BlockbookConnectedConfig
   abstract getAccountId(index: number): string
   abstract getAccountIds(): string[]
   abstract getAddress(index: number): string
-  abstract getAddressIndex(address: string): Promise<number | null>
   abstract getFeeRateRecommendation(feeLevel: AutoFeeLevels): Promise<FeeRate>
   abstract isValidAddress(address: string): Promise<boolean>
   abstract signTransaction(tx: BitcoinishUnsignedTransaction): Promise<BitcoinishSignedTransaction>
@@ -126,18 +124,30 @@ export abstract class BitcoinishPayments<Config extends BlockbookConnectedConfig
     feeOption: FeeOption,
   ): Promise<ResolvedFeeOption> {
     let targetLevel: FeeLevel
-    let targetRate: FeeRate
+    let target: FeeRate
+    let feeBase = ''
+    let feeMain = ''
     if (isType(FeeOptionCustom, feeOption)) {
       targetLevel = FeeLevel.Custom
-      targetRate = feeOption
+      target = feeOption
     } else {
       targetLevel = feeOption.feeLevel || DEFAULT_FEE_LEVEL
-      targetRate = await this.getFeeRateRecommendation(targetLevel)
+      target = await this.getFeeRateRecommendation(targetLevel)
     }
+    if (target.feeRateType === FeeRateType.Base) {
+      feeBase = target.feeRate
+      feeMain = this.toMainDenominationString(feeBase)
+    } else if (target.feeRateType === FeeRateType.Main) {
+      feeMain = target.feeRate
+      feeBase = this.toBaseDenominationString(feeMain)
+    }
+    // in base/weight case total fees depend on input/output count, so just leave them as empty strings
     return {
       targetFeeLevel: targetLevel,
-      targetFeeRate: targetRate.feeRate,
-      targetFeeRateType: targetRate.feeRateType,
+      targetFeeRate: target.feeRate,
+      targetFeeRateType: target.feeRateType,
+      feeBase,
+      feeMain,
     }
   }
 
@@ -375,20 +385,18 @@ export abstract class BitcoinishPayments<Config extends BlockbookConnectedConfig
     if (!fromAddress) {
       throw new Error(`Unable to determine fromAddress of ${this.coinSymbol} tx ${txId}`)
     }
-    const fromIndex = await this.getAddressIndex(fromAddress)
     const toAddress = get(tx, 'vout.0.addresses.0')
     if (!toAddress) {
       throw new Error(`Unable to determine toAddress of ${this.coinSymbol} tx ${txId}`)
     }
-    const toIndex = await this.getAddressIndex(toAddress)
 
     return {
       status,
       id: tx.txid,
-      fromIndex,
+      fromIndex: null,
       fromAddress,
       fromExtraId: null,
-      toIndex,
+      toIndex: null,
       toAddress,
       toExtraId: null,
       amount,

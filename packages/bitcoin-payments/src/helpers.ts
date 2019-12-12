@@ -30,7 +30,12 @@ export function isValidXpub(xpub: string): boolean {
 }
 
 export function isValidAddress(address: string, network: BitcoinjsNetwork): boolean {
-  throw new Error('not implemented')
+  try {
+    bitcoin.address.toOutputScript(address, network)
+    return true
+  } catch (e) {
+    return false
+  }
 }
 
 export function isValidExtraId(extraId: string): boolean {
