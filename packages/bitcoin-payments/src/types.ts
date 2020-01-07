@@ -20,9 +20,9 @@ export const BlockbookConnectedConfig = extendCodec(
 export type BlockbookConnectedConfig = t.TypeOf<typeof BlockbookConnectedConfig>
 
 export enum AddressType {
-  Legacy = 'legacy',
-  SegwitP2SH = 'segwit-p2sh',
-  SegwitNative = 'segwit-native',
+  Legacy = 'p2pkh',
+  SegwitP2SH = 'p2sh-p2pkh',
+  SegwitNative = 'p2wpkh',
 }
 export const AddressTypeT = enumCodec<AddressType>(AddressType, 'AddressType')
 

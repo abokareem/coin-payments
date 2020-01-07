@@ -57,7 +57,7 @@ export abstract class BitcoinishPayments<Config extends BlockbookConnectedConfig
   async destroy() {}
 
   get isSegwit() {
-    return this.addressType === 'segwit-p2sh' || this.addressType === 'segwit-native'
+    return this.addressType === AddressType.SegwitP2SH || this.addressType === AddressType.SegwitNative
   }
 
   requiresBalanceMonitor() {

@@ -28,7 +28,7 @@ export const DEFAULT_NETWORK_MIN_RELAY_FEE = 1000
  */
 export const DEFAULT_MIN_TX_FEE = 5
 
-export const DEFAULT_ADDRESS_TYPE: AddressType = AddressType.SegwitP2SH
+export const DEFAULT_ADDRESS_TYPE: AddressType = AddressType.SegwitNative
 
 export const BITCOIN_CONFIG = {
   coinSymbol: COIN_SYMBOL,
@@ -47,9 +47,9 @@ export const DEFAULT_NETWORK = NetworkType.Mainnet
 export const DEFAULT_MAINNET_SERVER = process.env.BITCOIN_SERVER_URL || 'https://btc1.trezor.io'
 export const DEFAULT_TESTNET_SERVER = process.env.BITCOIN_TESTNET_SERVER_URL || 'https://tbtc1.trezor.io'
 export const DEFAULT_DERIVATION_PATHS = {
-  'legacy': "m/44'/0'/0'",
-  'segwit-p2sh': "m/49'/0'/0'",
-  'segwit-native': "m/84'/0'/0'",
+  [AddressType.Legacy]: "m/44'/0'/0'",
+  [AddressType.SegwitP2SH]: "m/49'/0'/0'",
+  [AddressType.SegwitNative]: "m/84'/0'/0'",
 }
 
 export const DEFAULT_FEE_LEVEL = FeeLevel.Medium

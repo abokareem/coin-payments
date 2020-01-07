@@ -1,11 +1,12 @@
-import bitcoin from 'bitcoinjs-lib'
+import bitcoin, { ECPairInterface as ECPair } from 'bitcoinjs-lib'
 import {
   NetworkType, FeeRateType, FeeRate, TransactionStatus, AutoFeeLevels
 } from '@faast/payments-common'
 
 import { getBlockcypherFeeEstimate } from './utils'
 import {
-  BaseBitcoinPaymentsConfig, BitcoinishUnsignedTransaction, BitcoinishPaymentTx, BitcoinishSignedTransaction,
+  BaseBitcoinPaymentsConfig, BitcoinishUnsignedTransaction, BitcoinishPaymentTx,
+  BitcoinishSignedTransaction, AddressType,
 } from './types'
 import {
   DEFAULT_SAT_PER_BYTE_LEVELS,
@@ -13,6 +14,7 @@ import {
 } from './constants'
 import { toBaseDenominationNumber, isValidAddress } from './helpers'
 import { BitcoinishPayments } from './BitcoinishPayments'
+import { KeyPair } from './bip44'
 
 export abstract class BaseBitcoinPayments<Config extends BaseBitcoinPaymentsConfig> extends BitcoinishPayments<Config> {
 
@@ -24,7 +26,7 @@ export abstract class BaseBitcoinPayments<Config extends BaseBitcoinPaymentsConf
     })
   }
 
-  abstract getKeyPair(index: number): bitcoin.ECPair
+  abstract getKeyPair(index: number): KeyPair
 
   async isValidAddress(address: string): Promise<boolean> {
     return isValidAddress(address, this.bitcoinjsNetwork)
@@ -51,9 +53,8 @@ export abstract class BaseBitcoinPayments<Config extends BaseBitcoinPaymentsConf
     const { inputs, outputs } = tx.data as BitcoinishPaymentTx
 
     let redeemScript = undefined
-    if (this.isSegwit) {
-      redeemScript = bitcoin.script.witnessPubKeyHash.output.encode(
-        bitcoin.crypto.hash160(keyPair.getPublicKeyBuffer()))
+    if (this.addressType === AddressType.SegwitP2SH) {
+      redeemScript = bitcoin.payments.p2wpkh({ pubkey: keyPair.publicKey }).output
     }
 
     let builder = new bitcoin.TransactionBuilder(this.bitcoinjsNetwork)

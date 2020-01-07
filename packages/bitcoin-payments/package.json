@@ -41,7 +41,6 @@
   },
   "devDependencies": {
     "@faast/ts-config": "^1.3.2",
-    "@types/bitcoinjs-lib": "^3.4.0",
     "@types/jest": "^24.0.21",
     "@types/node": "^10.17.3",
     "@types/node-fetch": "^2.5.0",
@@ -71,7 +70,7 @@
   "dependencies": {
     "@faast/payments-common": "^0.17.6",
     "@faast/ts-common": "^0.6.0",
-    "bitcoinjs-lib": "3.3.2",
+    "bitcoinjs-lib": "^5.1.7",
     "blockbook-client": "^0.3.2",
     "io-ts": "^1.10.4",
     "lodash": "^4.17.15",
