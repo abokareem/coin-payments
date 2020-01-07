@@ -27,14 +27,13 @@ export function splitDerivationPath(path: string): string[] {
  * Derive the base HDNode required for deriveKeyPair, deriveAddress, and derivePrivateKey functions
  *
  * This partially applies the derivation path starting at the already derived depth of the provided key.
- *
  */
-export function deriveBaseHDNode(hdKey: string, derivationPath: string, network: BitcoinjsNetwork): HDNode {
+export function deriveHDNode(hdKey: string, derivationPath: string, network: BitcoinjsNetwork): HDNode {
   const rootNode = fromBase58(hdKey, network)
   const parts = splitDerivationPath(derivationPath).slice(rootNode.depth)
   let node = rootNode
   if (parts.length > 0) {
-    node = rootNode.derivePath(`m/${parts.join('/')}`)
+    node = rootNode.derivePath(parts.join('/'))
   }
   return node
 }
@@ -47,7 +46,7 @@ export function deriveAddress(
   baseNode: HDNode, index: number, network: BitcoinjsNetwork, addressType: AddressType,
 ): string {
   const keyPair = deriveKeyPair(baseNode, index, network)
-  return publicKeyToAddress(keyPair.publicKey, addressType, network)
+  return publicKeyToAddress(keyPair.publicKey, network, addressType)
 }
 
 export function derivePrivateKey(baseNode: HDNode, index: number, network: BitcoinjsNetwork) {
@@ -56,6 +55,6 @@ export function derivePrivateKey(baseNode: HDNode, index: number, network: Bitco
 }
 
 export function xprvToXpub(xprv: string, derivationPath: string, network: BitcoinjsNetwork) {
-  const node = deriveBaseHDNode(xprv, derivationPath, network)
+  const node = deriveHDNode(xprv, derivationPath, network)
   return node.neutered().toBase58()
 }

@@ -1,5 +1,5 @@
 import { createUnitConverters } from '@faast/payments-common'
-import bitcoin from 'bitcoinjs-lib'
+import * as bitcoin from 'bitcoinjs-lib'
 import { BitcoinjsNetwork, AddressType } from './types'
 import { DECIMAL_PLACES } from './constants'
 
@@ -42,7 +42,7 @@ export function isValidExtraId(extraId: string): boolean {
   return false
 }
 
-export function publicKeyToAddress(publicKey: Buffer, addressType: AddressType, network: BitcoinjsNetwork): string {
+export function publicKeyToAddress(publicKey: Buffer, network: BitcoinjsNetwork, addressType: AddressType): string {
   let script: bitcoin.payments.Payment
   if (addressType === AddressType.Legacy) {
     script = bitcoin.payments.p2pkh({ network, pubkey: publicKey })
@@ -67,9 +67,9 @@ function privateKeyToKeyPair(privateKey: string, network: BitcoinjsNetwork) {
   return bitcoin.ECPair.fromWIF(privateKey, network)
 }
 
-export function privateKeyToAddress(privateKey: string, addressType: AddressType, network: BitcoinjsNetwork) {
+export function privateKeyToAddress(privateKey: string, network: BitcoinjsNetwork, addressType: AddressType) {
   const keyPair = privateKeyToKeyPair(privateKey, network)
-  return publicKeyToAddress(keyPair.publicKey, addressType, network)
+  return publicKeyToAddress(keyPair.publicKey, network, addressType)
 }
 
 export function isValidPrivateKey(privateKey: string, network: BitcoinjsNetwork): boolean {
