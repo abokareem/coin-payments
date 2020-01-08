@@ -3,8 +3,16 @@ import request from 'request-promise-native'
 import { BlockbookConnectedConfig } from './types'
 import { BlockbookBitcoin, Blockbook } from 'blockbook-client'
 import { isString, Logger, isMatchingError, toBigNumber } from '@faast/ts-common'
-import { DEFAULT_MAINNET_SERVER, DEFAULT_TESTNET_SERVER } from './constants'
+import { DEFAULT_MAINNET_SERVER, DEFAULT_TESTNET_SERVER, NETWORK_TESTNET, NETWORK_MAINNET, BITCOIN_CONFIG } from './constants';
 import promiseRetry from 'promise-retry'
+
+export function toBitcoinishConfig<T extends BlockbookConnectedConfig>(config: T) {
+  return {
+    ...BITCOIN_CONFIG,
+    bitcoinjsNetwork: config.network === NetworkType.Testnet ? NETWORK_TESTNET : NETWORK_MAINNET,
+    ...config,
+  }
+}
 
 export function resolveServer(server: BlockbookConnectedConfig['server'], network: NetworkType): {
   api: BlockbookBitcoin

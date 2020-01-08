@@ -10,19 +10,26 @@ import {
 } from './helpers'
 import { isNil, assertType, Numeric, isUndefined } from '@faast/ts-common'
 import { BlockbookConnected } from './BlockbookConnected'
-import { BitcoinishBlock, BitcoinishPaymentsUtilsConfig } from './types'
+import { BitcoinishBlock, BitcoinishPaymentsUtilsConfig, AddressType } from './types'
+
+type UnitConverters = ReturnType<typeof createUnitConverters>
 
 export class BitcoinishPaymentsUtils extends BlockbookConnected implements PaymentsUtils {
 
   decimals: number
   bitcoinjsNetwork: BitcoinjsNetwork
-  unitConverters: ReturnType<typeof createUnitConverters>
 
   constructor(config: BitcoinishPaymentsUtilsConfig) {
     super(config)
     this.decimals = config.decimals
     this.bitcoinjsNetwork = config.bitcoinjsNetwork
-    this.unitConverters = createUnitConverters(this.decimals)
+    const unitConverters = createUnitConverters(this.decimals)
+    this.toMainDenominationString = unitConverters.toMainDenominationString
+    this.toMainDenominationNumber = unitConverters.toMainDenominationNumber
+    this.toMainDenominationBigNumber = unitConverters.toMainDenominationBigNumber
+    this.toBaseDenominationString = unitConverters.toBaseDenominationString
+    this.toBaseDenominationNumber = unitConverters.toBaseDenominationNumber
+    this.toBaseDenominationBigNumber = unitConverters.toBaseDenominationBigNumber
   }
 
   async isValidExtraId(extraId: string): Promise<boolean> {
@@ -72,13 +79,13 @@ export class BitcoinishPaymentsUtils extends BlockbookConnected implements Payme
     return this.toBaseDenominationString(amount)
   }
 
-  toMainDenominationString = this.unitConverters.toMainDenominationString
-  toMainDenominationNumber = this.unitConverters.toMainDenominationNumber
-  toMainDenominationBigNumber = this.unitConverters.toMainDenominationBigNumber
+  toMainDenominationString: UnitConverters['toMainDenominationString']
+  toMainDenominationNumber: UnitConverters['toMainDenominationNumber']
+  toMainDenominationBigNumber: UnitConverters['toMainDenominationBigNumber']
 
-  toBaseDenominationString = this.unitConverters.toMainDenominationString
-  toBaseDenominationNumber = this.unitConverters.toMainDenominationNumber
-  toBaseDenominationBigNumber = this.unitConverters.toMainDenominationBigNumber
+  toBaseDenominationString: UnitConverters['toMainDenominationString']
+  toBaseDenominationNumber: UnitConverters['toMainDenominationNumber']
+  toBaseDenominationBigNumber: UnitConverters['toMainDenominationBigNumber']
 
   isValidXprv = isValidXprv
   isValidXpub = isValidXpub
@@ -87,8 +94,8 @@ export class BitcoinishPaymentsUtils extends BlockbookConnected implements Payme
     return isValidPrivateKey(privateKey, this.bitcoinjsNetwork)
   }
 
-  privateKeyToAddress(privateKey: string) {
-    return privateKeyToAddress(privateKey, this.bitcoinjsNetwork)
+  privateKeyToAddress(privateKey: string, addressType: AddressType) {
+    return privateKeyToAddress(privateKey, this.bitcoinjsNetwork, addressType)
   }
 
   async getBlock(id?: string | number): Promise<BitcoinishBlock> {

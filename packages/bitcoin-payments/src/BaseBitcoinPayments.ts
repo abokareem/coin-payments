@@ -3,7 +3,7 @@ import {
   NetworkType, FeeRateType, FeeRate, TransactionStatus, AutoFeeLevels
 } from '@faast/payments-common'
 
-import { getBlockcypherFeeEstimate } from './utils'
+import { getBlockcypherFeeEstimate, toBitcoinishConfig } from './utils'
 import {
   BaseBitcoinPaymentsConfig, BitcoinishUnsignedTransaction, BitcoinishPaymentTx,
   BitcoinishSignedTransaction, AddressType,
@@ -19,11 +19,7 @@ import { KeyPair } from './bip44'
 export abstract class BaseBitcoinPayments<Config extends BaseBitcoinPaymentsConfig> extends BitcoinishPayments<Config> {
 
   constructor(config: BaseBitcoinPaymentsConfig) {
-    super({
-      ...BITCOIN_CONFIG,
-      bitcoinjsNetwork: config.network === NetworkType.Testnet ? bitcoin.networks.testnet : bitcoin.networks.bitcoin,
-      ...config,
-    })
+    super(toBitcoinishConfig(config))
   }
 
   abstract getKeyPair(index: number): KeyPair
