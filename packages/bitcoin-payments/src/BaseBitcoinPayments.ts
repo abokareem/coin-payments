@@ -10,10 +10,9 @@ import {
 } from './types'
 import {
   DEFAULT_SAT_PER_BYTE_LEVELS,
-  BITCOIN_CONFIG,
 } from './constants'
 import { toBaseDenominationNumber, isValidAddress } from './helpers'
-import { BitcoinishPayments } from './BitcoinishPayments'
+import { BitcoinishPayments } from './bitcoinish'
 import { KeyPair } from './bip44'
 
 export abstract class BaseBitcoinPayments<Config extends BaseBitcoinPaymentsConfig> extends BitcoinishPayments<Config> {
@@ -49,7 +48,7 @@ export abstract class BaseBitcoinPayments<Config extends BaseBitcoinPaymentsConf
     const { inputs, outputs } = tx.data as BitcoinishPaymentTx
 
     let redeemScript = undefined
-    if (this.addressType === AddressType.SegwitP2SH) {
+    if (this.isSegwit) {
       redeemScript = bitcoin.payments.p2wpkh({ pubkey: keyPair.publicKey }).output
     }
 

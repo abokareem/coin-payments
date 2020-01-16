@@ -3,60 +3,33 @@ import {
   BaseConfig, BaseUnsignedTransaction, BaseSignedTransaction, FeeRate,
   BaseTransactionInfo, BaseBroadcastResult, UtxoInfo,
 } from '@faast/payments-common'
-import { extendCodec, nullable, instanceofCodec, enumCodec } from '@faast/ts-common'
+import { extendCodec, enumCodec } from '@faast/ts-common'
 import { Network as BitcoinjsNetwork } from 'bitcoinjs-lib'
-import { BlockbookBitcoin, BlockInfoBitcoin } from 'blockbook-client'
+import { BlockInfoBitcoin } from 'blockbook-client'
+import { BitcoinishPaymentTx, BlockbookConfigServer } from './bitcoinish'
 
 export { BitcoinjsNetwork, UtxoInfo }
-
-export const BlockbookConnectedConfig = extendCodec(
-  BaseConfig,
-  {},
-  {
-    server: t.union([t.string, instanceofCodec(BlockbookBitcoin), t.null]),
-  },
-  'BlockbookConnectedConfig',
-)
-export type BlockbookConnectedConfig = t.TypeOf<typeof BlockbookConnectedConfig>
+export * from './bitcoinish/types'
 
 export enum AddressType {
   Legacy = 'p2pkh',
-  SegwitP2SH = 'p2sh-p2pkh',
+  SegwitP2SH = 'p2sh-p2wpkh',
   SegwitNative = 'p2wpkh',
 }
 export const AddressTypeT = enumCodec<AddressType>(AddressType, 'AddressType')
 
-export type BitcoinishPaymentsUtilsConfig = BlockbookConnectedConfig & {
-  coinSymbol: string,
-  coinName: string,
-  bitcoinjsNetwork: BitcoinjsNetwork,
-  decimals: number,
-}
-
-export type BitcoinishPaymentsConfig = BitcoinishPaymentsUtilsConfig & {
-  addressType: AddressType,
-  minTxFee: FeeRate,
-  dustThreshold: number,
-  networkMinRelayFee: number,
-}
-
-export const BitcoinishTxOutput = t.type({
-  address: t.string,
-  amount: t.number,
-}, 'BitcoinishTxOutput')
-export type BitcoinishTxOutput = t.TypeOf<typeof BitcoinishTxOutput>
-
-export const BitcoinishPaymentTx = t.type({
-  inputs: t.array(UtxoInfo),
-  outputs: t.array(BitcoinishTxOutput),
-  fee: t.number,
-  change: t.number,
-  changeAddress: nullable(t.string),
-}, 'BitcoinishPaymentTx')
-export type BitcoinishPaymentTx = t.TypeOf<typeof BitcoinishPaymentTx>
+export const BitcoinPaymentsUtilsConfig = extendCodec(
+  BaseConfig,
+  {},
+  {
+    server: BlockbookConfigServer,
+  },
+  'BitcoinPaymentsUtilsConfig',
+)
+export type BitcoinPaymentsUtilsConfig = t.TypeOf<typeof BitcoinPaymentsUtilsConfig>
 
 export const BaseBitcoinPaymentsConfig = extendCodec(
-  BlockbookConnectedConfig,
+  BitcoinPaymentsUtilsConfig,
   {},
   {
     addressType: AddressTypeT,
@@ -76,32 +49,36 @@ export const HdBitcoinPaymentsConfig = extendCodec(
   {
     derivationPath: t.string,
   },
-  'HdBitcoinishPaymentsConfig',
+  'HdBitcoinPaymentsConfig',
 )
-export type HdBitcoinishPaymentsConfig = t.TypeOf<typeof HdBitcoinPaymentsConfig>
+export type HdBitcoinPaymentsConfig = t.TypeOf<typeof HdBitcoinPaymentsConfig>
 
-export const BitcoinishUnsignedTransaction = extendCodec(
+export const BitcoinUnsignedTransactionData = BitcoinishPaymentTx
+export type BitcoinUnsignedTransactionData = t.TypeOf<typeof BitcoinUnsignedTransactionData>
+
+export const BitcoinUnsignedTransaction = extendCodec(
   BaseUnsignedTransaction,
   {
     amount: t.string,
     fee: t.string,
+    data: BitcoinUnsignedTransactionData,
   },
-  'BitcoinishUnsignedTransaction',
+  'BitcoinUnsignedTransaction',
 )
-export type BitcoinishUnsignedTransaction = t.TypeOf<typeof BitcoinishUnsignedTransaction>
+export type BitcoinUnsignedTransaction = t.TypeOf<typeof BitcoinUnsignedTransaction>
 
-export const BitcoinishSignedTransaction = extendCodec(BaseSignedTransaction, {
+export const BitcoinSignedTransaction = extendCodec(BaseSignedTransaction, {
   data: t.type({
     hex: t.string,
   }),
-}, {}, 'BitcoinishSignedTransaction')
-export type BitcoinishSignedTransaction = t.TypeOf<typeof BitcoinishSignedTransaction>
+}, {}, 'BitcoinSignedTransaction')
+export type BitcoinSignedTransaction = t.TypeOf<typeof BitcoinSignedTransaction>
 
-export const BitcoinishTransactionInfo = extendCodec(BaseTransactionInfo, {}, {}, 'BitcoinishTransactionInfo')
-export type BitcoinishTransactionInfo = t.TypeOf<typeof BitcoinishTransactionInfo>
+export const BitcoinTransactionInfo = extendCodec(BaseTransactionInfo, {}, {}, 'BitcoinTransactionInfo')
+export type BitcoinTransactionInfo = t.TypeOf<typeof BitcoinTransactionInfo>
 
-export const BitcoinishBroadcastResult = extendCodec(BaseBroadcastResult, {}, {}, 'BitcoinishBroadcastResult')
-export type BitcoinishBroadcastResult = t.TypeOf<typeof BitcoinishBroadcastResult>
+export const BitcoinBroadcastResult = extendCodec(BaseBroadcastResult, {}, {}, 'BitcoinBroadcastResult')
+export type BitcoinBroadcastResult = t.TypeOf<typeof BitcoinBroadcastResult>
 
-export const BitcoinishBlock = BlockInfoBitcoin
-export type BitcoinishBlock = BlockInfoBitcoin
+export const BitcoinBlock = BlockInfoBitcoin
+export type BitcoinBlock = BlockInfoBitcoin

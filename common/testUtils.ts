@@ -3,6 +3,9 @@ import { Logger } from '@faast/ts-common'
 import util from 'util'
 import fs from 'fs'
 import path from 'path'
+import { TransactionStatus } from '../packages/payments-common/src'
+
+export const END_TRANSACTION_STATES = [TransactionStatus.Confirmed, TransactionStatus.Failed]
 
 export async function delay(ms: number): Promise<void> {
   return new Promise(resolve => setTimeout(resolve, ms))

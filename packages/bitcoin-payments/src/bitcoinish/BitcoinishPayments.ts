@@ -1,7 +1,7 @@
 import {
   BasePayments, UtxoInfo, FeeOptionCustom, FeeRateType, FeeRate, FeeOption,
   ResolvedFeeOption, FeeLevel, AutoFeeLevels, Payport, ResolveablePayport,
-  BalanceResult, NetworkType, FromTo, TransactionStatus, CreateTransactionOptions,
+  BalanceResult, NetworkType, FromTo, TransactionStatus, CreateTransactionOptions, BaseConfig,
 } from '@faast/payments-common'
 import { isUndefined, isType, Numeric, toBigNumber } from '@faast/ts-common'
 import BigNumber from 'bignumber.js'
@@ -11,13 +11,12 @@ import {
   BitcoinishUnsignedTransaction, BitcoinishSignedTransaction, BitcoinishBroadcastResult, BitcoinishTransactionInfo,
   BitcoinishPaymentsConfig, BlockbookConnectedConfig,
   BitcoinishPaymentTx,
-  AddressType,
+  BitcoinishPaymentsUtilsConfig,
 } from './types'
 import { sortUtxos, estimateTxFee } from './utils'
-import { DEFAULT_FEE_LEVEL, MIN_RELAY_FEE } from './constants'
 import { BitcoinishPaymentsUtils } from './BitcoinishPaymentsUtils'
 
-export abstract class BitcoinishPayments<Config extends BlockbookConnectedConfig> extends BitcoinishPaymentsUtils
+export abstract class BitcoinishPayments<Config extends BaseConfig> extends BitcoinishPaymentsUtils
   implements BasePayments<
     Config,
     BitcoinishUnsignedTransaction,
@@ -27,10 +26,11 @@ export abstract class BitcoinishPayments<Config extends BlockbookConnectedConfig
   > {
   coinSymbol: string
   coinName: string
-  addressType: AddressType
   minTxFee?: FeeRate
   dustThreshold: number
   networkMinRelayFee: number
+  isSegwit: boolean
+  defaultFeeLevel: FeeLevel
 
   constructor(config: BitcoinishPaymentsConfig) {
     super(config)
@@ -38,10 +38,11 @@ export abstract class BitcoinishPayments<Config extends BlockbookConnectedConfig
     this.coinName = config.coinName
     this.decimals = config.decimals
     this.bitcoinjsNetwork = config.bitcoinjsNetwork
-    this.addressType = config.addressType
     this.minTxFee = config.minTxFee
     this.dustThreshold = config.dustThreshold
     this.networkMinRelayFee = config.networkMinRelayFee
+    this.isSegwit = config.isSegwit
+    this.defaultFeeLevel = config.defaultFeeLevel
   }
 
   abstract getFullConfig(): Config
@@ -55,10 +56,6 @@ export abstract class BitcoinishPayments<Config extends BlockbookConnectedConfig
 
   async init() {}
   async destroy() {}
-
-  get isSegwit() {
-    return this.addressType === AddressType.SegwitP2SH || this.addressType === AddressType.SegwitNative
-  }
 
   requiresBalanceMonitor() {
     return false
@@ -133,7 +130,7 @@ export abstract class BitcoinishPayments<Config extends BlockbookConnectedConfig
       targetLevel = FeeLevel.Custom
       target = feeOption
     } else {
-      targetLevel = feeOption.feeLevel || DEFAULT_FEE_LEVEL
+      targetLevel = feeOption.feeLevel || this.
       target = await this.getFeeRateRecommendation(targetLevel)
     }
     if (target.feeRateType === FeeRateType.Base) {

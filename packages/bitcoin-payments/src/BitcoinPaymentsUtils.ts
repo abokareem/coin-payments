@@ -1,9 +1,19 @@
-import { BitcoinishPaymentsUtils } from './BitcoinishPaymentsUtils'
+import { BitcoinishPaymentsUtils } from './bitcoinish'
 import { toBitcoinishConfig } from './utils'
-import { BlockbookConnectedConfig } from './types'
+import { BitcoinPaymentsUtilsConfig } from './types'
+import { isValidAddress, isValidPrivateKey } from './helpers'
 
 export class BitcoinPaymentsUtils extends BitcoinishPaymentsUtils {
-  constructor(config: BlockbookConnectedConfig = {}) {
+  constructor(config: BitcoinPaymentsUtilsConfig = {}) {
     super(toBitcoinishConfig(config))
   }
+
+  async isValidAddress(address: string) {
+    return isValidAddress(address, this.bitcoinjsNetwork)
+  }
+
+  async isValidPrivateKey(privateKey: string) {
+    return isValidPrivateKey(privateKey, this.bitcoinjsNetwork)
+  }
+
 }

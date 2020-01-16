@@ -2,22 +2,24 @@ import { omit } from 'lodash'
 import {
   assertType,
 } from '@faast/ts-common'
-import { xprvToXpub, deriveAddress, HDNode, deriveBaseHDNode, deriveKeyPair } from './bip44'
+import { xprvToXpub, deriveAddress, HDNode, deriveHDNode, deriveKeyPair } from './bip44'
 import {
-  HdBitcoinPaymentsConfig, HdBitcoinishPaymentsConfig,
+  HdBitcoinPaymentsConfig, AddressType,
 } from './types'
 import { BaseBitcoinPayments } from './BaseBitcoinPayments'
-import { DEFAULT_DERIVATION_PATHS } from './constants'
+import { DEFAULT_DERIVATION_PATHS, DEFAULT_ADDRESS_TYPE } from './constants'
 
-export class HdBitcoinPayments extends BaseBitcoinPayments<HdBitcoinishPaymentsConfig> {
+export class HdBitcoinPayments extends BaseBitcoinPayments<HdBitcoinPaymentsConfig> {
+  readonly addressType: AddressType
   readonly derivationPath: string
   readonly xpub: string
   readonly xprv: string | null
-  readonly baseHDNode: HDNode
+  readonly hdNode: HDNode
 
-  constructor(public config: HdBitcoinishPaymentsConfig) {
+  constructor(public config: HdBitcoinPaymentsConfig) {
     super(config)
     assertType(HdBitcoinPaymentsConfig, config)
+    this.addressType = config.addressType || DEFAULT_ADDRESS_TYPE
     this.derivationPath = config.derivationPath || DEFAULT_DERIVATION_PATHS[this.addressType]
 
     if (this.isValidXpub(config.hdKey)) {
@@ -29,17 +31,21 @@ export class HdBitcoinPayments extends BaseBitcoinPayments<HdBitcoinishPaymentsC
     } else {
       throw new Error('Invalid xprv/xpub provided to bitcoin payments config hdKey')
     }
-    this.baseHDNode = deriveBaseHDNode(config.hdKey, this.derivationPath, this.bitcoinjsNetwork)
+    this.hdNode = deriveHDNode(config.hdKey, this.derivationPath, this.bitcoinjsNetwork)
   }
 
   getFullConfig() {
-    return this.config
+    return {
+      ...this.config,
+      derivationPath: this.derivationPath,
+      addressType: this.addressType,
+    }
   }
+
   getPublicConfig() {
     return {
-      ...omit(this.config, ['logger', 'server']),
+      ...omit(this.getFullConfig(), ['logger', 'server', 'hdKey']),
       hdKey: this.xpub,
-      derivationPath: this.derivationPath,
     }
   }
   getAccountId(index: number): string {
@@ -50,13 +56,13 @@ export class HdBitcoinPayments extends BaseBitcoinPayments<HdBitcoinishPaymentsC
   }
 
   getAddress(index: number): string {
-    return deriveAddress(this.baseHDNode, index, this.bitcoinjsNetwork, this.addressType)
+    return deriveAddress(this.hdNode, index, this.bitcoinjsNetwork, this.addressType)
   }
 
   getKeyPair(index: number) {
     if (!this.xprv) {
       throw new Error(`Cannot get private key ${index} - HdBitcoinPayments was created with an xpub`)
     }
-    return deriveKeyPair(this.baseHDNode, index, this.bitcoinjsNetwork)
+    return deriveKeyPair(this.hdNode, index, this.bitcoinjsNetwork)
   }
 }

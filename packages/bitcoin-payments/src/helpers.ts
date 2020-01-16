@@ -21,13 +21,7 @@ export {
   toBaseDenominationNumber,
 }
 
-export function isValidXprv(xprv: string): boolean {
-  return xprv.startsWith('xprv')
-}
-
-export function isValidXpub(xpub: string): boolean {
-  return xpub.startsWith('xpub')
-}
+export { isValidXprv, isValidXpub } from './bitcoinish'
 
 export function isValidAddress(address: string, network: BitcoinjsNetwork): boolean {
   try {

@@ -3,7 +3,7 @@ import { Logger, assertType, DelegateLogger } from '@faast/ts-common'
 import { BlockbookBitcoin } from 'blockbook-client'
 
 import { BlockbookConnectedConfig } from './types'
-import { DEFAULT_NETWORK, PACKAGE_NAME } from './constants'
+import { DEFAULT_NETWORK, PACKAGE_NAME } from '../constants'
 import { resolveServer, retryIfDisconnected } from './utils'
 
 export abstract class BlockbookConnected {
@@ -12,10 +12,10 @@ export abstract class BlockbookConnected {
   api: BlockbookBitcoin | null
   server: string | null
 
-  constructor(config: BlockbookConnectedConfig = {}) {
+  constructor(config: BlockbookConnectedConfig) {
     assertType(BlockbookConnectedConfig, config)
-    this.networkType = config.network || DEFAULT_NETWORK
-    this.logger = new DelegateLogger(config.logger, PACKAGE_NAME)
+    this.networkType = config.network
+    this.logger = new DelegateLogger(config.logger)
     const { api, server } = resolveServer(config.server, this.networkType)
     this.api = api
     this.server = server

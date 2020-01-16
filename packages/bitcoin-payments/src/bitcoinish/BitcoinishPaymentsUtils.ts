@@ -1,20 +1,13 @@
 import { PaymentsUtils, Payport, createUnitConverters } from '@faast/payments-common'
 import { Network as BitcoinjsNetwork } from 'bitcoinjs-lib'
-import {
-  isValidXprv,
-  isValidXpub,
-  isValidAddress,
-  isValidExtraId,
-  isValidPrivateKey,
-  privateKeyToAddress,
-} from './helpers'
+import { isValidXprv, isValidXpub } from './helpers'
 import { isNil, assertType, Numeric, isUndefined } from '@faast/ts-common'
 import { BlockbookConnected } from './BlockbookConnected'
-import { BitcoinishBlock, BitcoinishPaymentsUtilsConfig, AddressType } from './types'
+import { BitcoinishBlock, BitcoinishPaymentsUtilsConfig } from './types'
 
 type UnitConverters = ReturnType<typeof createUnitConverters>
 
-export class BitcoinishPaymentsUtils extends BlockbookConnected implements PaymentsUtils {
+export abstract class BitcoinishPaymentsUtils extends BlockbookConnected implements PaymentsUtils {
 
   decimals: number
   bitcoinjsNetwork: BitcoinjsNetwork
@@ -33,19 +26,17 @@ export class BitcoinishPaymentsUtils extends BlockbookConnected implements Payme
   }
 
   async isValidExtraId(extraId: string): Promise<boolean> {
-    return isValidExtraId(extraId)
+    return false // utxo coins don't use extraIds
   }
 
-  async isValidAddress(address: string): Promise<boolean> {
-    return isValidAddress(address, this.bitcoinjsNetwork)
-  }
+  abstract async isValidAddress(address: string): Promise<boolean>
 
   private async _getPayportValidationMessage(payport: Payport): Promise<string | undefined> {
     const { address, extraId } = payport
-    if (!isValidAddress(address, this.bitcoinjsNetwork)) {
+    if (!await this.isValidAddress(address)) {
       return 'Invalid payport address'
     }
-    if (!isNil(extraId) && !isValidExtraId(extraId)) {
+    if (!isNil(extraId)) {
       return 'Invalid payport extraId'
     }
   }
@@ -89,14 +80,6 @@ export class BitcoinishPaymentsUtils extends BlockbookConnected implements Payme
 
   isValidXprv = isValidXprv
   isValidXpub = isValidXpub
-
-  isValidPrivateKey(privateKey: string) {
-    return isValidPrivateKey(privateKey, this.bitcoinjsNetwork)
-  }
-
-  privateKeyToAddress(privateKey: string, addressType: AddressType) {
-    return privateKeyToAddress(privateKey, this.bitcoinjsNetwork, addressType)
-  }
 
   async getBlock(id?: string | number): Promise<BitcoinishBlock> {
     if (isUndefined(id)) {

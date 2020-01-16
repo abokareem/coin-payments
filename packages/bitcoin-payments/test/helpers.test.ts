@@ -5,7 +5,7 @@ import {
   DERIVED_XPRV, DERIVED_XPUB, ADDRESS_LEGACY, ADDRESS_SEGWIT_NATIVE, ADDRESS_SEGWIT_P2SH, NETWORK,
 } from './fixtures'
 
-describe('utils', () => {
+describe('helpers', () => {
   test('toMainDenomination from string', () => {
     expect(toMainDenominationString('123456789')).toBe('1.23456789')
   })
