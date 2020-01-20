@@ -1,8 +1,8 @@
-import { NetworkType, FeeLevel, FeeRateType } from '@faast/payments-common'
+import { NetworkType, FeeLevel, FeeRateType, AutoFeeLevels } from '@faast/payments-common'
 import request from 'request-promise-native'
+import bs58 from 'bs58'
 import { AddressType, BaseBitcoinPaymentsConfig } from './types'
-import { BitcoinishPaymentsConfig, BlockbookConfigServer } from './bitcoinish'
-import { AutoFeeLevels } from '../../payments-common/src/types';
+import { BitcoinishPaymentsConfig } from './bitcoinish'
 import {
   DEFAULT_NETWORK,
   NETWORK_TESTNET,
@@ -30,6 +30,12 @@ const DEFAULT_BITCOINISH_CONFIG = {
     feeRateType: FeeRateType.BasePerWeight,
   },
   defaultFeeLevel: DEFAULT_FEE_LEVEL as AutoFeeLevels,
+}
+
+export function bip32MagicNumberToPrefix(magicNum: number): string {
+  const b = Buffer.alloc(82)
+  b.writeUInt32BE(magicNum, 0)
+  return bs58.encode(b).slice(0, 4)
 }
 
 export function toBitcoinishConfig<T extends BaseBitcoinPaymentsConfig>(config: T): BitcoinishPaymentsConfig {

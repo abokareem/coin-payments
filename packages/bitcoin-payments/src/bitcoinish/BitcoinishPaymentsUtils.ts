@@ -1,6 +1,5 @@
 import { PaymentsUtils, Payport, createUnitConverters } from '@faast/payments-common'
 import { Network as BitcoinjsNetwork } from 'bitcoinjs-lib'
-import { isValidXprv, isValidXpub } from './helpers'
 import { isNil, assertType, Numeric, isUndefined } from '@faast/ts-common'
 import { BlockbookConnected } from './BlockbookConnected'
 import { BitcoinishBlock, BitcoinishPaymentsUtilsConfig } from './types'
@@ -77,9 +76,6 @@ export abstract class BitcoinishPaymentsUtils extends BlockbookConnected impleme
   toBaseDenominationString: UnitConverters['toMainDenominationString']
   toBaseDenominationNumber: UnitConverters['toMainDenominationNumber']
   toBaseDenominationBigNumber: UnitConverters['toMainDenominationBigNumber']
-
-  isValidXprv = isValidXprv
-  isValidXpub = isValidXpub
 
   async getBlock(id?: string | number): Promise<BitcoinishBlock> {
     if (isUndefined(id)) {

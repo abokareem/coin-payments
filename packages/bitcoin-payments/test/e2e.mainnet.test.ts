@@ -199,12 +199,8 @@ function assertTxInfo(actual: BitcoinTransactionInfo, expected: BitcoinTransacti
       }
     }
     if (indexToSweep < 0) {
-      const allAddresses = await Promise.all(indicesToTry.map(i => payments.getPayport(i)))
-      logger.log(
-        'Cannot end to end test sweeping due to lack of funds. Send BTC to any of the following addresses and try again.',
-        allAddresses,
-      )
-      return
+      const allAddresses = await Promise.all(indicesToTry.map(async i => (await payments.getPayport(i)).address))
+      throw new Error(`Cannot end to end test sweeping due to lack of funds. Send mainnet BTC to any of the following addresses and try again. ${JSON.stringify(allAddresses)}`)
     }
     const recipientIndex = indexToSweep === indicesToTry[0] ? indicesToTry[1] : indicesToTry[0]
     try {

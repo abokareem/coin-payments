@@ -152,10 +152,10 @@ export abstract class BitcoinishPayments<Config extends BaseConfig> extends Bitc
 
   async getBalance(payport: ResolveablePayport): Promise<BalanceResult> {
     const { address } = await this.resolvePayport(payport)
-    this.logger.log('getBalance', address)
     const result = await this._retryDced(() => this.getApi().getAddressDetails(address, { details: 'basic' }))
     const confirmedBalance = this.toMainDenominationString(result.balance)
     const unconfirmedBalance = this.toMainDenominationString(result.unconfirmedBalance)
+    this.logger.debug('getBalance', address, confirmedBalance, unconfirmedBalance)
     return {
       confirmedBalance,
       unconfirmedBalance,
@@ -170,10 +170,6 @@ export abstract class BitcoinishPayments<Config extends BaseConfig> extends Bitc
   async getAvailableUtxos(payport: ResolveablePayport): Promise<UtxoInfo[]> {
     const { address } = await this.resolvePayport(payport)
     let utxosRaw = await this.getApi().getUtxosForAddress(address)
-    if (this.networkType === NetworkType.Testnet) {
-      this.logger.log('TESTNET ENABLED: Clipping UTXO length to 2 for test purposes')
-      utxosRaw = utxosRaw.slice(0, 2)
-    }
     const utxos: UtxoInfo[] = utxosRaw.map((data) => {
       const { value, height, lockTime } = data
       return {
@@ -315,6 +311,7 @@ export abstract class BitcoinishPayments<Config extends BaseConfig> extends Bitc
     amountNumeric: Numeric,
     options: CreateTransactionOptions = {},
   ): Promise<BitcoinishUnsignedTransaction> {
+    this.logger.debug('createTransaction', from, to, amountNumeric)
     const desiredAmount = toBigNumber(amountNumeric)
     if (desiredAmount.isNaN() || desiredAmount.lte(0)) {
       throw new Error(`Invalid ${this.coinSymbol} amount provided to createTransaction: ${desiredAmount}`)
@@ -326,6 +323,7 @@ export abstract class BitcoinishPayments<Config extends BaseConfig> extends Bitc
     const availableUtxos = isUndefined(options.availableUtxos)
       ? await this.getAvailableUtxos(from)
       : options.availableUtxos
+      this.logger.debug('createTransaction availableUtxos', availableUtxos)
 
     const { targetFeeLevel, targetFeeRate, targetFeeRateType } = await this.resolveFeeOption(options)
     this.logger.debug(`createTransaction resolvedFeeOption ${targetFeeLevel} ${targetFeeRate} ${targetFeeRateType}`)
@@ -366,13 +364,17 @@ export abstract class BitcoinishPayments<Config extends BaseConfig> extends Bitc
     to: ResolveablePayport,
     options: CreateTransactionOptions = {},
   ): Promise<BitcoinishUnsignedTransaction> {
-    this.logger.log('createSweepTransaction', from, to, options)
+    this.logger.debug('createSweepTransaction', from, to, options)
     const availableUtxos = isUndefined(options.availableUtxos)
       ? await this.getAvailableUtxos(from)
       : options.availableUtxos
-    this.logger.log('availableUtxos', availableUtxos)
+    if (availableUtxos.length === 0) {
+      throw new Error('No utxos to sweep')
+    }
     const amount = this._sumUtxoValue(availableUtxos)
-    this.logger.log('amount', amount)
+    if (this.isSweepableBalance(amount)) {
+      throw new Error(`Balance ${amount} too low to sweep`)
+    }
     return this.createTransaction(from, to, amount, {
       ...options,
       availableUtxos,

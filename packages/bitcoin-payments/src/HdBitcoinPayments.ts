@@ -2,12 +2,15 @@ import { omit } from 'lodash'
 import {
   assertType,
 } from '@faast/ts-common'
+import bs58 from 'bs58'
 import { xprvToXpub, deriveAddress, HDNode, deriveHDNode, deriveKeyPair } from './bip44'
 import {
   HdBitcoinPaymentsConfig,
 } from './types'
 import { BaseBitcoinPayments } from './BaseBitcoinPayments'
 import { DEFAULT_DERIVATION_PATHS } from './constants'
+import { isValidXprv, isValidXpub, validateHdKey } from './helpers';
+import { bip32MagicNumberToPrefix } from './utils'
 
 export class HdBitcoinPayments extends BaseBitcoinPayments<HdBitcoinPaymentsConfig> {
   readonly derivationPath: string
@@ -27,9 +30,28 @@ export class HdBitcoinPayments extends BaseBitcoinPayments<HdBitcoinPaymentsConf
       this.xpub = xprvToXpub(config.hdKey, this.derivationPath, this.bitcoinjsNetwork)
       this.xprv = config.hdKey
     } else {
-      throw new Error('Invalid xprv/xpub provided to bitcoin payments config hdKey')
+      const providedPrefix = config.hdKey.slice(0, 4)
+      const xpubPrefix = bip32MagicNumberToPrefix(this.bitcoinjsNetwork.bip32.public)
+      const xprvPrefix = bip32MagicNumberToPrefix(this.bitcoinjsNetwork.bip32.private)
+      let reason = ''
+      if (providedPrefix !== xpubPrefix && providedPrefix !== xprvPrefix) {
+        reason = ` with prefix ${providedPrefix} but expected ${xprvPrefix} or ${xpubPrefix}`
+      } else {
+        reason = ` (${validateHdKey(config.hdKey, this.bitcoinjsNetwork)})`
+      }
+      throw new Error(
+        `Invalid ${this.networkType} hdKey provided to bitcoin payments config${reason}`
+      )
     }
     this.hdNode = deriveHDNode(config.hdKey, this.derivationPath, this.bitcoinjsNetwork)
+  }
+
+  isValidXprv(xprv: string) {
+    return isValidXprv(xprv, this.bitcoinjsNetwork)
+  }
+
+  isValidXpub(xpub: string) {
+    return isValidXpub(xpub, this.bitcoinjsNetwork)
   }
 
   getFullConfig() {
