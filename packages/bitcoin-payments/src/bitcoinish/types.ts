@@ -41,15 +41,15 @@ export type BitcoinishPaymentsConfig = BitcoinishPaymentsUtilsConfig & {
 
 export const BitcoinishTxOutput = t.type({
   address: t.string,
-  amount: t.number,
+  value: t.string,
 }, 'BitcoinishTxOutput')
 export type BitcoinishTxOutput = t.TypeOf<typeof BitcoinishTxOutput>
 
 export const BitcoinishPaymentTx = t.type({
   inputs: t.array(UtxoInfo),
   outputs: t.array(BitcoinishTxOutput),
-  fee: t.number,
-  change: t.number,
+  fee: t.string,
+  change: t.string,
   changeAddress: nullable(t.string),
 }, 'BitcoinishPaymentTx')
 export type BitcoinishPaymentTx = t.TypeOf<typeof BitcoinishPaymentTx>

@@ -1,4 +1,4 @@
-import bitcoin, { ECPairInterface as ECPair } from 'bitcoinjs-lib'
+import { payments as bjsPayments, TransactionBuilder, ECPairInterface as ECPair } from 'bitcoinjs-lib'
 import {
   NetworkType, FeeRateType, FeeRate, TransactionStatus, AutoFeeLevels
 } from '@faast/payments-common'
@@ -9,16 +9,18 @@ import {
   BitcoinishSignedTransaction, AddressType,
 } from './types'
 import {
-  DEFAULT_SAT_PER_BYTE_LEVELS,
+  DEFAULT_SAT_PER_BYTE_LEVELS, DEFAULT_ADDRESS_TYPE,
 } from './constants'
 import { toBaseDenominationNumber, isValidAddress } from './helpers'
 import { BitcoinishPayments } from './bitcoinish'
 import { KeyPair } from './bip44'
 
 export abstract class BaseBitcoinPayments<Config extends BaseBitcoinPaymentsConfig> extends BitcoinishPayments<Config> {
+  readonly addressType: AddressType
 
   constructor(config: BaseBitcoinPaymentsConfig) {
     super(toBitcoinishConfig(config))
+    this.addressType = config.addressType || DEFAULT_ADDRESS_TYPE
   }
 
   abstract getKeyPair(index: number): KeyPair
@@ -48,17 +50,20 @@ export abstract class BaseBitcoinPayments<Config extends BaseBitcoinPaymentsConf
     const { inputs, outputs } = tx.data as BitcoinishPaymentTx
 
     let redeemScript = undefined
-    if (this.isSegwit) {
-      redeemScript = bitcoin.payments.p2wpkh({ pubkey: keyPair.publicKey }).output
+    let prevOutScript = undefined
+    if (this.addressType === AddressType.SegwitP2SH) {
+      redeemScript = bjsPayments.p2wpkh({ pubkey: keyPair.publicKey }).output
+    } else if (this.addressType === AddressType.SegwitNative) {
+      prevOutScript = bjsPayments.p2wpkh({ pubkey: keyPair.publicKey }).output
     }
 
-    let builder = new bitcoin.TransactionBuilder(this.bitcoinjsNetwork)
+    let builder = new TransactionBuilder(this.bitcoinjsNetwork)
     for (let output of outputs) {
-      builder.addOutput(output.address, toBaseDenominationNumber(output.amount))
+      builder.addOutput(output.address, toBaseDenominationNumber(output.value))
     }
     for (let i = 0; i < inputs.length; i++) {
       const input = inputs[i]
-      builder.addInput(input.txid, input.vout)
+      builder.addInput(input.txid, input.vout, undefined, prevOutScript)
       builder.sign(
         i,
         keyPair,

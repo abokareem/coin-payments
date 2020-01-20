@@ -10,7 +10,7 @@ import { get } from 'lodash'
 import {
   BitcoinishUnsignedTransaction, BitcoinishSignedTransaction, BitcoinishBroadcastResult, BitcoinishTransactionInfo,
   BitcoinishPaymentsConfig, BlockbookConnectedConfig,
-  BitcoinishPaymentTx,
+  BitcoinishPaymentTx, BitcoinishTxOutput,
   BitcoinishPaymentsUtilsConfig,
 } from './types'
 import { sortUtxos, estimateTxFee } from './utils'
@@ -30,7 +30,7 @@ export abstract class BitcoinishPayments<Config extends BaseConfig> extends Bitc
   dustThreshold: number
   networkMinRelayFee: number
   isSegwit: boolean
-  defaultFeeLevel: FeeLevel
+  defaultFeeLevel: AutoFeeLevels
 
   constructor(config: BitcoinishPaymentsConfig) {
     super(config)
@@ -62,7 +62,7 @@ export abstract class BitcoinishPayments<Config extends BaseConfig> extends Bitc
   }
 
   isSweepableBalance(balance: Numeric): boolean {
-    return new BigNumber(balance).gt(MIN_RELAY_FEE)
+    return this.toBaseDenominationNumber(balance) > this.networkMinRelayFee
   }
 
   async getPayport(index: number): Promise<Payport> {
@@ -116,7 +116,7 @@ export abstract class BitcoinishPayments<Config extends BaseConfig> extends Bitc
     if (feeSat < this.networkMinRelayFee) {
       feeSat = this.networkMinRelayFee
     }
-    return feeSat
+    return Math.ceil(feeSat)
   }
 
   async resolveFeeOption(
@@ -130,7 +130,7 @@ export abstract class BitcoinishPayments<Config extends BaseConfig> extends Bitc
       targetLevel = FeeLevel.Custom
       target = feeOption
     } else {
-      targetLevel = feeOption.feeLevel || this.
+      targetLevel = feeOption.feeLevel || this.defaultFeeLevel
       target = await this.getFeeRateRecommendation(targetLevel)
     }
     if (target.feeRateType === FeeRateType.Base) {
@@ -152,12 +152,13 @@ export abstract class BitcoinishPayments<Config extends BaseConfig> extends Bitc
 
   async getBalance(payport: ResolveablePayport): Promise<BalanceResult> {
     const { address } = await this.resolvePayport(payport)
+    this.logger.log('getBalance', address)
     const result = await this._retryDced(() => this.getApi().getAddressDetails(address, { details: 'basic' }))
-    const confirmedBalance = new BigNumber(result.balance)
-    const unconfirmedBalance = new BigNumber(result.unconfirmedBalance)
+    const confirmedBalance = this.toMainDenominationString(result.balance)
+    const unconfirmedBalance = this.toMainDenominationString(result.unconfirmedBalance)
     return {
-      confirmedBalance: confirmedBalance.toString(),
-      unconfirmedBalance: unconfirmedBalance.toString(),
+      confirmedBalance,
+      unconfirmedBalance,
       sweepable: this.isSweepableBalance(confirmedBalance)
     }
   }
@@ -219,26 +220,32 @@ export abstract class BitcoinishPayments<Config extends BaseConfig> extends Bitc
   /**
    * Build a simple payment transaction.
    * Note: fee will be subtracted from first output when attempting to send entire account balance
+   * Note: All amounts/values should be input and output as main denomination strings for consistent
+   * serialization. Within this function they're converted to JS Numbers for convenient arithmetic
+   * then converted back to strings before being returned.
    */
   async buildPaymentTx(
     availableUtxos: UtxoInfo[],
-    desiredOutputs: Array<{ address: string, amount: number }>,
+    desiredOutputs: Array<BitcoinishTxOutput>,
     changeAddress: string,
-    feeRate: FeeRate,
+    desiredFeeRate: FeeRate,
     useAllUtxos: boolean = false,
   ): Promise<BitcoinishPaymentTx> {
     let outputTotal = 0
-    const outputs = desiredOutputs
-    for (let i = 0; i < desiredOutputs.length; i++) {
-      const { address, amount } = desiredOutputs[i]
+    const outputs = desiredOutputs.map(({ address, value }) => ({
+      address,
+      satoshis: this.toBaseDenominationNumber(value),
+    }))
+    for (let i = 0; i < outputs.length; i++) {
+      const { address, satoshis } = outputs[i]
       // validate
       if (!await this.isValidAddress(address)) {
         throw new Error(`Invalid ${this.coinSymbol} address ${address} provided for output ${i}`)
       }
-      if (amount <= 0) {
-        throw new Error(`Invalid ${this.coinSymbol} amount ${amount} provided for output ${i}`)
+      if (satoshis <= 0) {
+        throw new Error(`Invalid ${this.coinSymbol} amount ${satoshis} provided for output ${i}`)
       }
-      outputTotal += amount
+      outputTotal += satoshis
     }
     const outputCount = outputs.length + 1 // Plus one for change output
 
@@ -250,14 +257,15 @@ export abstract class BitcoinishPayments<Config extends BaseConfig> extends Bitc
     if (useAllUtxos) {
       inputUtxos = availableUtxos
       inputTotal = this.toBaseDenominationNumber(this._sumUtxoValue(availableUtxos))
-      feeSat = this._calculatTxFeeSatoshis(feeRate, inputUtxos.length, outputCount)
+      feeSat = this._calculatTxFeeSatoshis(desiredFeeRate, inputUtxos.length, outputCount)
       amountWithFee = outputTotal + feeSat
+      this.logger.debug('buildPaymentTx', { inputTotal, feeSat, amountWithFee })
     } else {
       const sortedUtxos = sortUtxos(availableUtxos)
       for (const utxo of sortedUtxos) {
         inputUtxos.push(utxo)
-        inputTotal = inputTotal + Number.parseFloat(utxo.value)
-        feeSat = this._calculatTxFeeSatoshis(feeRate, inputUtxos.length, outputCount)
+        inputTotal = inputTotal + this.toBaseDenominationNumber(utxo.value)
+        feeSat = this._calculatTxFeeSatoshis(desiredFeeRate, inputUtxos.length, outputCount)
         amountWithFee = outputTotal + feeSat
         if (inputTotal >= amountWithFee) {
           break
@@ -265,33 +273,37 @@ export abstract class BitcoinishPayments<Config extends BaseConfig> extends Bitc
       }
     }
     if (amountWithFee > inputTotal) {
-      const amountWithSymbol = `${this.toMainDenominationString(amountWithFee)} ${this.coinSymbol}`
+      const amountWithSymbol = `${this.toMainDenominationString(outputTotal)} ${this.coinSymbol}`
       if (outputTotal === inputTotal) {
         this.logger.debug(`Attempting to send entire ${amountWithSymbol} balance. ` +
           `Subtracting fee of ${feeSat} sat from first output.`)
         amountWithFee = outputTotal
-        outputs[0].amount -= feeSat
+        outputs[0].satoshis -= feeSat
         outputTotal -= feeSat
-        if (outputs[0].amount <= this.dustThreshold) {
+        if (outputs[0].satoshis <= this.dustThreshold) {
           throw new Error(`First ${this.coinSymbol} output minus fee is below dust threshold`)
         }
       } else {
-        throw new Error(`You do not have enough UTXOs to send ${amountWithSymbol} with ${feeRate} sat/byte fee`)
+        const { feeRate, feeRateType } = desiredFeeRate
+        const feeText = `${feeRate} ${feeRateType}${feeRateType === FeeRateType.BasePerWeight ? ` (${this.toMainDenominationString(feeSat)})` : ''}`
+        throw new Error(`You do not have enough UTXOs (${this.toMainDenominationString(inputTotal)}) to send ${amountWithSymbol} with ${feeText} fee`)
       }
     }
 
-    let change = inputTotal - amountWithFee
-    if (change > this.dustThreshold) { // Avoid creating dust outputs
-      outputs.push({ address: changeAddress, amount: change })
-    } else if (change > 0) {
-      this.logger.log(`${this.coinSymbol} change of ${change} sat is below dustThreshold of ${this.dustThreshold}, adding to fee`)
-      feeSat += change
-      change = 0
+    let changeSat = inputTotal - amountWithFee
+    let change = this.toMainDenominationString(changeSat)
+    if (changeSat > this.dustThreshold) { // Avoid creating dust outputs
+      outputs.push({ address: changeAddress, satoshis: changeSat })
+    } else if (changeSat > 0) {
+      this.logger.log(`${this.coinSymbol} change of ${changeSat} sat is below dustThreshold of ${this.dustThreshold}, adding to fee`)
+      feeSat += changeSat
+      changeSat = 0
+      change = '0'
     }
     return {
       inputs: inputUtxos,
-      outputs,
-      fee: feeSat,
+      outputs: outputs.map(({ address, satoshis }) => ({ address, value: this.toMainDenominationString(satoshis) })),
+      fee: this.toMainDenominationString(feeSat),
       change,
       changeAddress,
     }
@@ -303,9 +315,9 @@ export abstract class BitcoinishPayments<Config extends BaseConfig> extends Bitc
     amountNumeric: Numeric,
     options: CreateTransactionOptions = {},
   ): Promise<BitcoinishUnsignedTransaction> {
-    const amount = toBigNumber(amountNumeric)
-    if (amount.isNaN() || amount.lte(0)) {
-      throw new Error(`Invalid ${this.coinSymbol} amount provided to createTransaction: ${amount}`)
+    const desiredAmount = toBigNumber(amountNumeric)
+    if (desiredAmount.isNaN() || desiredAmount.lte(0)) {
+      throw new Error(`Invalid ${this.coinSymbol} amount provided to createTransaction: ${desiredAmount}`)
     }
     const {
       fromIndex, fromAddress, fromExtraId, toIndex, toAddress, toExtraId,
@@ -316,15 +328,19 @@ export abstract class BitcoinishPayments<Config extends BaseConfig> extends Bitc
       : options.availableUtxos
 
     const { targetFeeLevel, targetFeeRate, targetFeeRateType } = await this.resolveFeeOption(options)
+    this.logger.debug(`createTransaction resolvedFeeOption ${targetFeeLevel} ${targetFeeRate} ${targetFeeRateType}`)
 
     const paymentTx = await this.buildPaymentTx(
       availableUtxos,
-      [{ address: toAddress, amount: amount.toNumber() }],
+      [{ address: toAddress, value: desiredAmount.toString() }],
       fromAddress,
       { feeRate: targetFeeRate, feeRateType: targetFeeRateType },
       options.useAllUtxos,
     )
-    const feeMain = this.toMainDenominationString(paymentTx.fee)
+    this.logger.debug('createTransaction data', paymentTx)
+    const feeMain = paymentTx.fee
+
+    const actualAmount = paymentTx.outputs[0].value
 
     return {
       status: TransactionStatus.Unsigned,
@@ -335,7 +351,7 @@ export abstract class BitcoinishPayments<Config extends BaseConfig> extends Bitc
       toIndex,
       toAddress,
       toExtraId,
-      amount: amount.toString(),
+      amount: actualAmount,
       targetFeeLevel,
       targetFeeRate,
       targetFeeRateType,
@@ -350,10 +366,13 @@ export abstract class BitcoinishPayments<Config extends BaseConfig> extends Bitc
     to: ResolveablePayport,
     options: CreateTransactionOptions = {},
   ): Promise<BitcoinishUnsignedTransaction> {
+    this.logger.log('createSweepTransaction', from, to, options)
     const availableUtxos = isUndefined(options.availableUtxos)
       ? await this.getAvailableUtxos(from)
       : options.availableUtxos
+    this.logger.log('availableUtxos', availableUtxos)
     const amount = this._sumUtxoValue(availableUtxos)
+    this.logger.log('amount', amount)
     return this.createTransaction(from, to, amount, {
       ...options,
       availableUtxos,
@@ -373,13 +392,14 @@ export abstract class BitcoinishPayments<Config extends BaseConfig> extends Bitc
 
   async getTransactionInfo(txId: string): Promise<BitcoinishTransactionInfo> {
     const tx = await this._retryDced(() => this.getApi().getTx(txId))
-    const amount = this.toMainDenominationString(tx.value)
     const fee = this.toMainDenominationString(tx.fees)
     const confirmationId = tx.blockHash || null
     const confirmationNumber = tx.blockHeight ? String(tx.blockHeight) : undefined
-    const confirmationTimestamp = tx.blockTime ? new Date(tx.blockTime) : null
+    const confirmationTimestamp = tx.blockTime ? new Date(tx.blockTime * 1000) : null
     const isConfirmed = Boolean(confirmationNumber)
     const status = isConfirmed ? TransactionStatus.Confirmed : TransactionStatus.Pending
+    const amountSat = get(tx, 'vout.0.value', tx.value)
+    const amount = this.toMainDenominationString(amountSat)
     const fromAddress = get(tx, 'vin.0.addresses.0')
     if (!fromAddress) {
       throw new Error(`Unable to determine fromAddress of ${this.coinSymbol} tx ${txId}`)

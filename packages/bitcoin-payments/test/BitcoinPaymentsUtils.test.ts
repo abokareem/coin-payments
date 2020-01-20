@@ -26,10 +26,10 @@ describe('BitcoinPaymentUtils', () => {
 
   describe('isValidPrivateKey', () => {
     test('should return true for valid', async () => {
-      expect(pu.isValidPrivateKey(PRIVATE_KEY)).toBe(true)
+      expect(await pu.isValidPrivateKey(PRIVATE_KEY)).toBe(true)
     })
     test('should return false for invalid', async () => {
-      expect(pu.isValidPrivateKey('fake')).toBe(false)
+      expect(await pu.isValidPrivateKey('fake')).toBe(false)
     })
   })
 

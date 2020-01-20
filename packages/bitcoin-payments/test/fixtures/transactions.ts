@@ -2,149 +2,69 @@
 import { BitcoinTransactionInfo, BitcoinSignedTransaction } from '../../src'
 import { FeeLevel, FeeRateType, TransactionStatus } from '@faast/payments-common'
 
-export const txInfo_209F8: BitcoinTransactionInfo = {
-  id: '209f8dbefe6bbb9395f1be76dfb581b7bb53197d27cb28fbfe6c819b914c140c',
-  toAddress: 'TYehHt29ynSogYoxp9653hMFmxCV3gCZqg',
-  fromAddress: 'TBR4KDPrN9BrnyjienckS2xixcTpJ9aP26',
+export const txInfo_e10d7: BitcoinTransactionInfo = {
+  id: 'e10d793afdfc7145ba1acd8990df6214057bd12c8cb13797860d5d1443628c04',
+  toAddress: '1ARdvxWWxai7B3dbNmURMVJWwKADcXTN6w',
   toExtraId: null,
-  fromIndex: null,
   toIndex: null,
-  amount: '0.002323',
-  fee: '0.1',
+  fromAddress: '3Kr7HPfaNkjTzoS6pv33wUPAuQwSxpcWMc',
+  fromExtraId: null,
+  fromIndex: null,
+  amount: '0.26407945',
+  fee: '0.000168',
   sequenceNumber: null,
   isExecuted: true,
   isConfirmed: true,
   confirmations: 1234,
-  confirmationId: '3748106',
-  confirmationTimestamp: new Date(1541196198000),
+  confirmationId: '0000000000000000000452c23d6bdc070b3ad53ef2ae3f95b416b37efb1e575c',
+  confirmationNumber: '613151',
+  confirmationTimestamp: new Date('2020-01-16T20:34:36.000Z'),
   status: TransactionStatus.Confirmed,
   data: {
-    blockNumber: 3748106,
-    blockTimeStamp: 1541196198000,
-    contractResult: [''],
-    currentBlock: {
-      blockID: '00000000007e75b870f791dc72308ddf71b58237575bc2f13f5b68cba0f0c573',
-      block_header: {
-        raw_data: {
-          number: 8287672,
-          parentHash: '00000000007e75b7d5d3c97ca154ad94d629d66040847c8d9e6b0be241b4d0ce',
-          timestamp: 1555006905000,
-          txTrieRoot: 'b83ef9b7ac102ceb7b2dddae0b6622dbf7bebb397e9798f971de4c7b371b7347',
-          version: 7,
-          witness_address: '41c189fa6fc9ed7a3580c3fe291915d5c6a6259be7',
-        },
-        witness_signature:
-          '5cfc0d6839e5bf4246bb08f97e0294efc46130dc27052f1276235933a216af5a6b4950135765ac9f407364c7d860031ee9561103488b6fb0aa3cd83dd67da58d00',
-      },
-    },
-    fee: 100000,
-    id: '209f8dbefe6bbb9395f1be76dfb581b7bb53197d27cb28fbfe6c819b914c140c',
-    raw_data: {
-      contract: [
-        {
-          parameter: {
-            type_url: 'type.googleapis.com/protocol.TransferContract',
-            value: {
-              amount: 2323,
-              owner_address: '410fdbb073f86cea5c16eb05f1b2e174236c003b57',
-              to_address: '41f8ca9ae6502d787eab3a322f662ae52cae787f2f',
-            },
-          },
-          type: 'TransferContract',
-        },
-      ],
-      expiration: 1541196252000,
-      ref_block_bytes: '3108',
-      ref_block_hash: 'ae9604e3f4636913',
-      timestamp: 1541196195242,
-    },
-    raw_data_hex:
-      '0a0231082208ae9604e3f463691340e086d2b3ed2c5a66080112620a2d747970652e676f6f676c65617069732e636f6d2f70726f746f636f6c2e5472616e73666572436f6e747261637412310a15410fdbb073f86cea5c16eb05f1b2e174236c003b57121541f8ca9ae6502d787eab3a322f662ae52cae787f2f18931270aacbceb3ed2c',
-    receipt: {
-      net_fee: 100000,
-    },
-    ret: [
+    'blockHash': '0000000000000000000452c23d6bdc070b3ad53ef2ae3f95b416b37efb1e575c',
+    'blockHeight': 613151,
+    'blockTime': 1579206876,
+    'confirmations': 489,
+    'fees': '16800',
+    'hex': '010000000001015ccd738e047e3d171fc316d6b25cfaf55f4df951914c31a6555be1f427dff210010000001716001494d5b8499442f20ff0f8536efad062738fcb1f05ffffff000209f49201000000001976a9146761f1680bc1d452248190ad1cf57fe6b8eeb33c88acc941e2090000000017a914571482e76757ffb862c43873bb80709ed62a5bb2870247304402202e61aa7525effda62f227f8ca93bae7b24e9d234208e3a0fed585d5b42b5a390022070aee8bfabb6b9899efdee10d10bcfa9cc4ba1941ba0e215614137fe688cff6501210290b34cdb4a8d938de06bffb7dd72dd7c56e02111e47f0a31a045646cf9c1584800000000',
+    'txid': 'e10d793afdfc7145ba1acd8990df6214057bd12c8cb13797860d5d1443628c04',
+    'value': '192230866',
+    'valueIn': '192247666',
+    'version': 1,
+    'vin': [
       {
-        contractRet: 'SUCCESS',
+        'addresses': [
+          '3Kr7HPfaNkjTzoS6pv33wUPAuQwSxpcWMc',
+        ],
+        'hex': '16001494d5b8499442f20ff0f8536efad062738fcb1f05',
+        'n': 0,
+        'sequence': 16777215,
+        'txid': '10f2df27f4e15b55a6314c9151f94d5ff5fa5cb2d616c31f173d7e048e73cd5c',
+        'value': '192247666',
+        'vout': 1,
       },
     ],
-    signature: [
-      'd6dbee070107073f756f7f44bb082a477c438d5aa54f685dc4a813c04bf26deed611ebb316fe6a8384cf02bcebd4e84b0333637add4bcaf7cc2a5071e999fb6000',
-    ],
-    txID: '209f8dbefe6bbb9395f1be76dfb581b7bb53197d27cb28fbfe6c819b914c140c',
-  },
-}
-
-export const txInfo_a0787: BitcoinTransactionInfo = {
-  id: 'a078736ab768b34dc06ca9048dddfa73383947aed0d93f1eff2adde4b7254f39',
-  amount: '10.27',
-  toAddress: 'TVqbYNCpGBxTXP84zRuLk3iS4TXGo1verg',
-  fromAddress: 'TBScvVdiX5Yob2XBLWUfUfTiTLabm2RsB8',
-  toExtraId: null,
-  fromIndex: null,
-  toIndex: null,
-  fee: '0',
-  sequenceNumber: null,
-  isExecuted: true,
-  isConfirmed: true,
-  confirmations: 4199517,
-  confirmationId: '4093430',
-  confirmationTimestamp: new Date(1542234063000),
-  status: TransactionStatus.Confirmed,
-  data: {
-    ret: [
+    'vout': [
       {
-        contractRet: 'SUCCESS',
+        'addresses': [
+          '1ARdvxWWxai7B3dbNmURMVJWwKADcXTN6w',
+        ],
+        'hex': '76a9146761f1680bc1d452248190ad1cf57fe6b8eeb33c88ac',
+        'n': 0,
+        'spent': true,
+        'value': '26407945',
+      },
+      {
+        'addresses': [
+          '39dTHPMBhNuGHSbFC8b4vXbX1CiWLdCitV',
+        ],
+        'hex': 'a914571482e76757ffb862c43873bb80709ed62a5bb287',
+        'n': 1,
+        'spent': true,
+        'value': '165822921',
       },
     ],
-    signature: [
-      '5ceb8c8cb23225038f72910e310f89dd55c70e9abfc3589b86ec78a8f14d2ba9a2367527a4ec2dd9671f2d421e91cad90ebeb717b78a9fff26cd58e59c2d31a601',
-    ],
-    txID: 'a078736ab768b34dc06ca9048dddfa73383947aed0d93f1eff2adde4b7254f39',
-    raw_data: {
-      contract: [
-        {
-          parameter: {
-            value: {
-              amount: 10270000,
-              owner_address: '4110275343850fff69059e2fe2f8f07a418a86e1f8',
-              to_address: '41d9f200d49eda93de31bb3dd305928d7cfb1fd312',
-            },
-            type_url: 'type.googleapis.com/protocol.TransferContract',
-          },
-          type: 'TransferContract',
-        },
-      ],
-      ref_block_bytes: '75f4',
-      ref_block_hash: '8d8a83fa3ea0003d',
-      expiration: 1542234117000,
-      timestamp: 1542234058986,
-    },
-    raw_data_hex:
-      '0a0275f422088d8a83fa3ea0003d4088a7c4a2f12c5a68080112640a2d747970652e676f6f676c65617069732e636f6d2f70726f746f636f6c2e5472616e73666572436f6e747261637412330a154110275343850fff69059e2fe2f8f07a418a86e1f8121541d9f200d49eda93de31bb3dd305928d7cfb1fd31218b0eaf20470eae1c0a2f12c',
-    id: 'a078736ab768b34dc06ca9048dddfa73383947aed0d93f1eff2adde4b7254f39',
-    blockNumber: 4093430,
-    blockTimeStamp: 1542234063000,
-    contractResult: [''],
-    receipt: {
-      net_usage: 268,
-    },
-    currentBlock: {
-      block_header: {
-        raw_data: {
-          number: 8292947,
-          txTrieRoot: 'c35e0d1a79b78882ca0bde7c6ec688cbc3ae06312838187586b72c62e6af81ae',
-          witness_address: '415863f6091b8e71766da808b1dd3159790f61de7d',
-          parentHash: '00000000007e8a52556283dd8d89990e2c79e4c9f12828e6271bb5469ab10099',
-          version: 7,
-          timestamp: 1555022763000,
-        },
-        witness_signature:
-          '5028cde11148ac5684a7d8ad0f603b57f0580c15ba94ae93df35e33eeb178ffe59337039f2a8a157aa55748bffa69d034c0a227568c80973164071f9cf069deb01',
-      },
-      blockID: '00000000007e8a532982ee2dc51f926b7e1491d919787642a775bd9f62e8ccfa',
-    },
-  },
+  }
 }
 
 export const signedTx_valid: BitcoinSignedTransaction = {

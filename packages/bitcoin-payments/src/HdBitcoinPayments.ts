@@ -4,13 +4,12 @@ import {
 } from '@faast/ts-common'
 import { xprvToXpub, deriveAddress, HDNode, deriveHDNode, deriveKeyPair } from './bip44'
 import {
-  HdBitcoinPaymentsConfig, AddressType,
+  HdBitcoinPaymentsConfig,
 } from './types'
 import { BaseBitcoinPayments } from './BaseBitcoinPayments'
-import { DEFAULT_DERIVATION_PATHS, DEFAULT_ADDRESS_TYPE } from './constants'
+import { DEFAULT_DERIVATION_PATHS } from './constants'
 
 export class HdBitcoinPayments extends BaseBitcoinPayments<HdBitcoinPaymentsConfig> {
-  readonly addressType: AddressType
   readonly derivationPath: string
   readonly xpub: string
   readonly xprv: string | null
@@ -19,7 +18,6 @@ export class HdBitcoinPayments extends BaseBitcoinPayments<HdBitcoinPaymentsConf
   constructor(public config: HdBitcoinPaymentsConfig) {
     super(config)
     assertType(HdBitcoinPaymentsConfig, config)
-    this.addressType = config.addressType || DEFAULT_ADDRESS_TYPE
     this.derivationPath = config.derivationPath || DEFAULT_DERIVATION_PATHS[this.addressType]
 
     if (this.isValidXpub(config.hdKey)) {

@@ -34,23 +34,23 @@ describe('bip44', () => {
   })
   describe('deriveKeyPair', () => {
     it('derives index correctly', () => {
-      expect(deriveKeyPair(BASE_NODE, 3, NETWORK)).toEqual(BASE_NODE.derive(0).derive(3))
+      expect(deriveKeyPair(BASE_NODE, 2, NETWORK)).toEqual(BASE_NODE.derive(0).derive(2))
     })
   })
   describe('deriveAddress', () => {
     it('derives legacy address', () => {
-      expect(deriveAddress(BASE_NODE, 3, NETWORK, AddressType.Legacy)).toBe(ADDRESS_LEGACY)
+      expect(deriveAddress(BASE_NODE, 2, NETWORK, AddressType.Legacy)).toBe(ADDRESS_LEGACY)
     })
     it('derives p2sh segwit address', () => {
-      expect(deriveAddress(BASE_NODE, 3, NETWORK, AddressType.SegwitP2SH)).toBe(ADDRESS_SEGWIT_P2SH)
+      expect(deriveAddress(BASE_NODE, 2, NETWORK, AddressType.SegwitP2SH)).toBe(ADDRESS_SEGWIT_P2SH)
     })
     it('derives native segwit address', () => {
-      expect(deriveAddress(BASE_NODE, 3, NETWORK, AddressType.SegwitNative)).toBe(ADDRESS_SEGWIT_NATIVE)
+      expect(deriveAddress(BASE_NODE, 2, NETWORK, AddressType.SegwitNative)).toBe(ADDRESS_SEGWIT_NATIVE)
     })
   })
   describe('derivePrivateKey', () => {
     it('derives private key', () => {
-      expect(derivePrivateKey(BASE_NODE, 3, NETWORK)).toBe(PRIVATE_KEY)
+      expect(derivePrivateKey(BASE_NODE, 2, NETWORK)).toBe(PRIVATE_KEY)
     })
   })
   describe('xprvToXpub', () => {
