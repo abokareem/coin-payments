@@ -25,8 +25,19 @@ export const BaseConfig = t.partial(
 )
 export type BaseConfig = t.TypeOf<typeof BaseConfig>
 
-export const AddressOrIndex = t.union([t.string, t.number], 'AddressOrIndex')
-export type AddressOrIndex = t.TypeOf<typeof AddressOrIndex>
+export const Payport = requiredOptionalCodec(
+  {
+    address: t.string,
+  },
+  {
+    extraId: nullable(t.string),
+  },
+  'Payport',
+)
+export type Payport = t.TypeOf<typeof Payport>
+
+export const ResolveablePayport = t.union([Payport, t.string, t.number], 'ResolveablePayport')
+export type ResolveablePayport = t.TypeOf<typeof ResolveablePayport>
 
 export enum FeeLevel {
   Custom = 'custom',
@@ -101,6 +112,7 @@ export const CreateTransactionOptions = extendCodec(
     payportBalance: Numeric,
     utxos: t.array(UtxoInfo),
     useAllUtxos: t.boolean,
+    changePayports: t.array(ResolveablePayport),
   },
   'CreateTransactionOptions',
 )
@@ -225,17 +237,6 @@ export const BaseBroadcastResult = t.type(
 )
 export type BaseBroadcastResult = t.TypeOf<typeof BaseBroadcastResult>
 
-export const Payport = requiredOptionalCodec(
-  {
-    address: t.string,
-  },
-  {
-    extraId: nullable(t.string),
-  },
-  'Payport',
-)
-export type Payport = t.TypeOf<typeof Payport>
-
 export const BalanceActivityType = t.union([t.literal('in'), t.literal('out')], 'BalanceActivityType')
 export type BalanceActivityType = t.TypeOf<typeof BalanceActivityType>
 
@@ -278,9 +279,6 @@ export type FromTo = Pick<
   'fromAddress' | 'fromIndex' | 'fromExtraId' | 'toAddress' | 'toIndex' | 'toExtraId'
 > & { fromPayport: Payport; toPayport: Payport }
 
-export const ResolveablePayport = t.union([Payport, t.string, t.number], 'ResolveablePayport')
-export type ResolveablePayport = t.TypeOf<typeof ResolveablePayport>
-
 export const RetrieveBalanceActivitiesResult = t.type(
   {
     from: t.string,
@@ -289,3 +287,22 @@ export const RetrieveBalanceActivitiesResult = t.type(
   'RetrieveBalanceActivitiesResult',
 )
 export type RetrieveBalanceActivitiesResult = t.TypeOf<typeof RetrieveBalanceActivitiesResult>
+
+export const CreateMultiTransactionOptions = extendCodec(
+  CreateTransactionOptions,
+  {},
+  'CreateMultiTransactionOptions',
+)
+export type CreateMultiTransactionOptions = t.TypeOf<typeof CreateMultiTransactionOptions>
+
+export const TransactionInput = t.type({
+  index: t.number,
+  amount: t.union([t.literal('sweep'), Numeric]),
+}, 'TransactionInput')
+export type TransactionInput = t.TypeOf<typeof TransactionInput>
+
+export const TransactionOutput = t.type({
+  payport: ResolveablePayport,
+  amount: Numeric,
+}, 'TransactionOutput')
+export type TransactionOutput = t.TypeOf<typeof TransactionOutput>

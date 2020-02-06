@@ -12,6 +12,8 @@ import {
   FromTo,
   ResolveablePayport,
   UtxoInfo,
+  TransactionInput,
+  TransactionOutput,
 } from './types'
 import { PaymentsUtils } from './PaymentsUtils'
 
@@ -159,6 +161,15 @@ export interface BasePayments<
   createSweepTransaction<O extends CreateTransactionOptions>(
     from: number,
     to: ResolveablePayport,
+    options?: O,
+  ): Promise<UnsignedTransaction>
+
+  /**
+   * Creates a new payments transaction sending from multiple inputs to multiple outputs.
+   */
+  createMultiTransaction<O extends CreateTransactionOptions>(
+    from: TransactionInput[],
+    to: TransactionOutput[],
     options?: O,
   ): Promise<UnsignedTransaction>
 
